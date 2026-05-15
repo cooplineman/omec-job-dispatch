@@ -1094,8 +1094,8 @@ export default function Home() {
                       <TableCell>{job.job_number}</TableCell>
                       <TableCell>{job.applicant_name}</TableCell>
                       <TableCell>{job.member_number || "-"}</TableCell>
-                      <TableCell>{job.current_stage}</TableCell>
-                      <TableCell>{job.gate_status}</TableCell>
+                      <TableCell>{formatDisplayLabel(job.current_stage)}</TableCell>
+                      <TableCell>{renderGateBadge(job.gate_status)}</TableCell>
                       <TableCell>{job.gate_message}</TableCell>
                       <TableCell>{job.next_action}</TableCell>
                     </tr>
@@ -1279,7 +1279,10 @@ export default function Home() {
                 />
                 <Detail label="Email" value={selectedJobDetail.email} />
                 <Detail label="Phone" value={selectedJobDetail.phone} />
-                <Detail label="Job Type" value={selectedJobDetail.job_type} />
+                <Detail
+                  label="Job Type"
+                  value={formatDisplayLabel(selectedJobDetail.job_type)}
+                />
                 <Detail
                   label="Work Order #"
                   value={selectedJobDetail.work_order_number}
@@ -1304,20 +1307,26 @@ export default function Home() {
                 />
                 <Detail
                   label="Current Stage"
-                  value={selectedJobDetail.current_stage}
+                  value={formatDisplayLabel(selectedJobDetail.current_stage)}
                 />
-                <Detail label="Gate" value={selectedJobDetail.gate_message} />
+                <Detail
+                  label="Gate"
+                  value={renderGateBadge(
+                    selectedJobDetail.gate_status,
+                    selectedJobDetail.gate_message
+                  )}
+                />
                 <Detail
                   label="Next Action"
                   value={selectedJobDetail.next_action}
                 />
                 <Detail
                   label="Membership"
-                  value={selectedJobDetail.membership_status}
+                  value={formatDisplayLabel(selectedJobDetail.membership_status)}
                 />
                 <Detail
                   label="Site Fee"
-                  value={selectedJobDetail.site_fee_status}
+                  value={formatDisplayLabel(selectedJobDetail.site_fee_status)}
                 />
                 <Detail
                   label="Site Visit"
@@ -1325,7 +1334,7 @@ export default function Home() {
                 />
                 <Detail
                   label="Estimate"
-                  value={selectedJobDetail.estimate_status}
+                  value={formatDisplayLabel(selectedJobDetail.estimate_status)}
                 />
                 <Detail
                   label="Estimate Amount"
@@ -1341,7 +1350,9 @@ export default function Home() {
                 />
                 <Detail
                   label="Construction"
-                  value={selectedJobDetail.construction_status}
+                  value={formatDisplayLabel(
+                    selectedJobDetail.construction_status
+                  )}
                 />
                 <Detail
                   label="Inspection Received"
@@ -1603,7 +1614,7 @@ export default function Home() {
                     </div>
 
                     <div style={{ fontSize: "12px", marginTop: "4px" }}>
-                      Type: {formatActivityKey(activity.action_type)}
+                      Type: {formatDisplayLabel(activity.action_type)}
                     </div>
 
                     {activity.details &&
@@ -1612,7 +1623,7 @@ export default function Home() {
                           {Object.entries(activity.details).map(
                             ([key, value]) => (
                               <div key={key} style={activityDetailRowStyle}>
-                                <strong>{formatActivityKey(key)}:</strong>{" "}
+                                <strong>{formatDisplayLabel(key)}:</strong>{" "}
                                 <span>{formatActivityValue(value)}</span>
                               </div>
                             )
@@ -1720,7 +1731,7 @@ export default function Home() {
                       )}
 
                       <div style={{ fontSize: "12px", marginTop: "4px" }}>
-                        {document.document_type}
+                        {formatDisplayLabel(document.document_type)}
                       </div>
 
                       <div style={{ fontSize: "12px", color: "#555555" }}>
@@ -1879,10 +1890,47 @@ function formatDateTime(value: string | null) {
   return `${month}-${day}-${year}, ${date.toLocaleTimeString()}`;
 }
 
-function formatActivityKey(key: string) {
-  return key
+function formatDisplayLabel(value: string | null | undefined) {
+  if (!value) return "-";
+
+  return value
     .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+    .replace(/\bOmec\b/g, "OMEC")
+    .replace(/\bGo\b/g, "GO")
+    .replace(/\bStop\b/g, "STOP")
+    .replace(/\bNsr\b/g, "NSR");
+}
+
+function getGateIcon(gateStatus: string | null | undefined) {
+  const status = (gateStatus || "").toLowerCase();
+
+  if (status === "stop") return "🛑";
+  if (status === "go") return "🟢";
+  if (status === "closed") return "🚪";
+  if (status === "watch") return "🟡";
+
+  return "⚪";
+}
+
+function renderGateBadge(
+  gateStatus: string | null | undefined,
+  gateMessage?: string | null
+) {
+  const label = formatDisplayLabel(gateStatus);
+  const message = gateMessage || label;
+
+  return (
+    <span style={gateBadgeStyle}>
+      <span style={{ fontSize: "18px" }}>{getGateIcon(gateStatus)}</span>
+      <span>
+        <strong>{label}</strong>
+        {gateMessage ? ` — ${message}` : ""}
+      </span>
+    </span>
+  );
 }
 
 function formatActivityValue(value: unknown) {
@@ -2208,6 +2256,17 @@ const filePlaceholderStyle: React.CSSProperties = {
   padding: "8px",
   color: "#111111",
   borderRadius: "10px",
+};
+
+const gateBadgeStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "8px",
+  padding: "4px 10px",
+  borderRadius: "999px",
+  background: "#fffdf7",
+  border: "1px solid #d8c8a3",
+  whiteSpace: "nowrap",
 };
 
 const tableStyle: React.CSSProperties = {
