@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { createClient, type User } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -86,6 +87,19 @@ type JobActivity = {
   created_at: string;
 };
 
+type EditInfoForm = {
+  applicantName: string;
+  memberNumber: string;
+  email: string;
+  phone: string;
+  serviceAddressLine1: string;
+  serviceAddressLine2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  workOrderNumber: string;
+};
+
 type WorkflowUpdates = {
   p_membership_status?: string | null;
   p_site_fee_status?: string | null;
@@ -130,6 +144,8 @@ export default function Home() {
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [addingComment, setAddingComment] = useState(false);
+  const [showEditInfoForm, setShowEditInfoForm] = useState(false);
+  const [savingEditInfo, setSavingEditInfo] = useState(false);
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedJobNumber, setSelectedJobNumber] = useState("");
@@ -158,6 +174,19 @@ export default function Home() {
     state: "OK",
     postalCode: "",
     jobType: "new_service",
+  });
+
+  const [editInfoForm, setEditInfoForm] = useState<EditInfoForm>({
+    applicantName: "",
+    memberNumber: "",
+    email: "",
+    phone: "",
+    serviceAddressLine1: "",
+    serviceAddressLine2: "",
+    city: "",
+    state: "OK",
+    postalCode: "",
+    workOrderNumber: "",
   });
 
   const selectedJob = jobs.find((job) => job.job_number === selectedJobNumber);
@@ -230,6 +259,7 @@ export default function Home() {
       setSignedFileUrls({});
       setComments([]);
       setActivities([]);
+      setShowEditInfoForm(false);
     }
   }, [user]);
 
@@ -309,6 +339,7 @@ export default function Home() {
       setSignedFileUrls({});
       setComments([]);
       setActivities([]);
+      setShowEditInfoForm(false);
       return;
     }
 
@@ -353,6 +384,19 @@ export default function Home() {
 
       setDepositRequired(String(detailData.deposit_required ?? 0));
       setDepositReceived(String(detailData.deposit_received ?? 0));
+
+      setEditInfoForm({
+        applicantName: detailData.applicant_name || "",
+        memberNumber: detailData.member_number || "",
+        email: detailData.email || "",
+        phone: detailData.phone || "",
+        serviceAddressLine1: detailData.service_address_line1 || "",
+        serviceAddressLine2: detailData.service_address_line2 || "",
+        city: detailData.city || "",
+        state: detailData.state || "OK",
+        postalCode: detailData.postal_code || "",
+        workOrderNumber: detailData.work_order_number || "",
+      });
     }
   }
 
@@ -439,6 +483,58 @@ export default function Home() {
     }
 
     setCreating(false);
+  }
+
+  async function saveJobInfo(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!canEdit) {
+      setMessage("You do not have permission to edit job information.");
+      return;
+    }
+
+    if (!selectedJobNumber) {
+      setMessage("Select a job first.");
+      return;
+    }
+
+    if (!editInfoForm.applicantName.trim()) {
+      setMessage("Applicant name is required.");
+      return;
+    }
+
+    if (!editInfoForm.serviceAddressLine1.trim()) {
+      setMessage("Service address is required.");
+      return;
+    }
+
+    setSavingEditInfo(true);
+    setMessage("");
+
+    const { error } = await supabase.rpc("update_job_member_info", {
+      p_job_number: selectedJobNumber,
+      p_applicant_name: editInfoForm.applicantName.trim(),
+      p_member_number: editInfoForm.memberNumber.trim(),
+      p_email: editInfoForm.email.trim(),
+      p_phone: editInfoForm.phone.trim(),
+      p_service_address_line1: editInfoForm.serviceAddressLine1.trim(),
+      p_service_address_line2: editInfoForm.serviceAddressLine2.trim(),
+      p_city: editInfoForm.city.trim(),
+      p_state: editInfoForm.state.trim(),
+      p_postal_code: editInfoForm.postalCode.trim(),
+      p_work_order_number: editInfoForm.workOrderNumber.trim(),
+    });
+
+    if (error) {
+      setMessage(`Error saving job info: ${error.message}`);
+    } else {
+      setMessage(`Updated job info for ${selectedJobNumber}`);
+      setShowEditInfoForm(false);
+      await loadDashboard();
+      await loadSelectedJobData(selectedJobNumber);
+    }
+
+    setSavingEditInfo(false);
   }
 
   async function updateWorkflow(label: string, updates: WorkflowUpdates) {
@@ -678,9 +774,7 @@ export default function Home() {
 
     setUploading(false);
   }
-  function printJobPacket() {
-    window.print();
-  }
+
   async function addComment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -717,6 +811,10 @@ export default function Home() {
     }
 
     setAddingComment(false);
+  }
+
+  function printJobPacket() {
+    window.print();
   }
 
   if (authLoading) {
@@ -770,13 +868,23 @@ export default function Home() {
   return (
     <main style={mainStyle}>
       <div style={topBarStyle}>
-        <div>
-          <h1 style={{ marginBottom: "4px" }}>OMEC Job Dispatch</h1>
-          <p style={{ marginTop: 0 }}>Staff dashboard connected to Supabase.</p>
-          <p style={{ marginTop: 0, fontSize: "14px" }}>
-            Logged in as <strong>{user.email}</strong> — Role:{" "}
-            <strong>{userRole}</strong>
-          </p>
+        <div style={brandHeaderStyle}>
+          <Image
+            src="/omec-logo.png"
+            alt="OMEC logo"
+            width={84}
+            height={84}
+            style={logoStyle}
+          />
+
+          <div>
+            <h1 style={{ marginBottom: "4px" }}>OMEC Job Dispatch</h1>
+            <p style={{ marginTop: 0 }}>Operations Dashboard</p>
+            <p style={{ marginTop: 0, fontSize: "14px" }}>
+              Logged in as <strong>{user.email}</strong> — Role:{" "}
+              <strong>{userRole}</strong>
+            </p>
+          </div>
         </div>
 
         <button type="button" onClick={signOut} style={secondaryButtonStyle}>
@@ -1012,9 +1120,148 @@ export default function Home() {
         <>
           <section style={sectionStyle}>
             <h2>Selected Job Details</h2>
-            <button type="button" onClick={printJobPacket} style={buttonStyle}>
-  Print / Save Job Packet
-</button>
+
+            <div style={buttonRowStyle}>
+              <button
+                type="button"
+                onClick={printJobPacket}
+                style={buttonStyle}
+              >
+                Print / Save Job Packet
+              </button>
+
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => setShowEditInfoForm(!showEditInfoForm)}
+                  style={secondaryButtonStyle}
+                >
+                  {showEditInfoForm ? "Hide Edit Job Info" : "Edit Job Info"}
+                </button>
+              )}
+            </div>
+
+            {canEdit && showEditInfoForm && (
+              <form onSubmit={saveJobInfo} style={panelStyle}>
+                <h3>Edit Job / Member Info</h3>
+
+                <FormInput
+                  label="Applicant Name"
+                  value={editInfoForm.applicantName}
+                  required
+                  onChange={(value) =>
+                    setEditInfoForm({
+                      ...editInfoForm,
+                      applicantName: value,
+                    })
+                  }
+                />
+
+                <FormInput
+                  label="Member Number"
+                  value={editInfoForm.memberNumber}
+                  onChange={(value) =>
+                    setEditInfoForm({
+                      ...editInfoForm,
+                      memberNumber: value,
+                    })
+                  }
+                />
+
+                <FormInput
+                  label="Email"
+                  value={editInfoForm.email}
+                  onChange={(value) =>
+                    setEditInfoForm({ ...editInfoForm, email: value })
+                  }
+                />
+
+                <FormInput
+                  label="Phone"
+                  value={editInfoForm.phone}
+                  onChange={(value) =>
+                    setEditInfoForm({ ...editInfoForm, phone: value })
+                  }
+                />
+
+                <FormInput
+                  label="Service Address"
+                  value={editInfoForm.serviceAddressLine1}
+                  required
+                  onChange={(value) =>
+                    setEditInfoForm({
+                      ...editInfoForm,
+                      serviceAddressLine1: value,
+                    })
+                  }
+                />
+
+                <FormInput
+                  label="Address Line 2"
+                  value={editInfoForm.serviceAddressLine2}
+                  onChange={(value) =>
+                    setEditInfoForm({
+                      ...editInfoForm,
+                      serviceAddressLine2: value,
+                    })
+                  }
+                />
+
+                <FormInput
+                  label="City"
+                  value={editInfoForm.city}
+                  onChange={(value) =>
+                    setEditInfoForm({ ...editInfoForm, city: value })
+                  }
+                />
+
+                <FormInput
+                  label="State"
+                  value={editInfoForm.state}
+                  onChange={(value) =>
+                    setEditInfoForm({ ...editInfoForm, state: value })
+                  }
+                />
+
+                <FormInput
+                  label="ZIP"
+                  value={editInfoForm.postalCode}
+                  onChange={(value) =>
+                    setEditInfoForm({ ...editInfoForm, postalCode: value })
+                  }
+                />
+
+                <FormInput
+                  label="Work Order Number"
+                  value={editInfoForm.workOrderNumber}
+                  onChange={(value) =>
+                    setEditInfoForm({
+                      ...editInfoForm,
+                      workOrderNumber: value,
+                    })
+                  }
+                />
+
+                <div style={buttonRowStyle}>
+                  <button
+                    type="submit"
+                    disabled={savingEditInfo}
+                    style={buttonStyle}
+                  >
+                    {savingEditInfo ? "Saving..." : "Save Job Info"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowEditInfoForm(false)}
+                    style={secondaryButtonStyle}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+
             <div style={detailCardStyle}>
               <h3>
                 {selectedJobDetail.job_number} —{" "}
@@ -1079,6 +1326,10 @@ export default function Home() {
                 <Detail
                   label="Estimate"
                   value={selectedJobDetail.estimate_status}
+                />
+                <Detail
+                  label="Estimate Amount"
+                  value={`$${formatMoney(selectedJobDetail.estimate_amount)}`}
                 />
                 <Detail
                   label="Deposit"
@@ -1373,153 +1624,7 @@ export default function Home() {
               </div>
             )}
           </section>
-          <section id="job-packet-print-area" style={printPacketStyle}>
-  <h1>OMEC Job Packet</h1>
 
-  <h2>
-    {selectedJobDetail.job_number} — {selectedJobDetail.applicant_name}
-  </h2>
-
-  <h3>Job Summary</h3>
-  <table>
-    <tbody>
-      <tr>
-        <td>Applicant</td>
-        <td>{selectedJobDetail.applicant_name}</td>
-      </tr>
-      <tr>
-        <td>Member #</td>
-        <td>{selectedJobDetail.member_number || "-"}</td>
-      </tr>
-      <tr>
-        <td>Email</td>
-        <td>{selectedJobDetail.email || "-"}</td>
-      </tr>
-      <tr>
-        <td>Phone</td>
-        <td>{selectedJobDetail.phone || "-"}</td>
-      </tr>
-      <tr>
-        <td>Address</td>
-        <td>
-          {selectedJobDetail.service_address_line1}
-          {selectedJobDetail.service_address_line2
-            ? `, ${selectedJobDetail.service_address_line2}`
-            : ""}
-          , {selectedJobDetail.city || ""}, {selectedJobDetail.state || ""}{" "}
-          {selectedJobDetail.postal_code || ""}
-        </td>
-      </tr>
-      <tr>
-        <td>Job Type</td>
-        <td>{selectedJobDetail.job_type}</td>
-      </tr>
-      <tr>
-        <td>Current Stage</td>
-        <td>{selectedJobDetail.current_stage}</td>
-      </tr>
-      <tr>
-        <td>Gate</td>
-        <td>{selectedJobDetail.gate_message}</td>
-      </tr>
-      <tr>
-        <td>Next Action</td>
-        <td>{selectedJobDetail.next_action}</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <h3>Workflow / Payment</h3>
-  <table>
-    <tbody>
-      <tr>
-        <td>Membership</td>
-        <td>{selectedJobDetail.membership_status}</td>
-      </tr>
-      <tr>
-        <td>Site Fee</td>
-        <td>{selectedJobDetail.site_fee_status}</td>
-      </tr>
-      <tr>
-        <td>Site Visit</td>
-        <td>{formatDateTime(selectedJobDetail.site_visit_at)}</td>
-      </tr>
-      <tr>
-        <td>Estimate</td>
-        <td>{selectedJobDetail.estimate_status}</td>
-      </tr>
-      <tr>
-        <td>Deposit Required</td>
-        <td>${formatMoney(selectedJobDetail.deposit_required)}</td>
-      </tr>
-      <tr>
-        <td>Deposit Received</td>
-        <td>${formatMoney(selectedJobDetail.deposit_received)}</td>
-      </tr>
-      <tr>
-        <td>Construction</td>
-        <td>{selectedJobDetail.construction_status}</td>
-      </tr>
-      <tr>
-        <td>Inspection Received</td>
-        <td>{selectedJobDetail.inspection_received ? "Yes" : "No"}</td>
-      </tr>
-      <tr>
-        <td>Inspection Date</td>
-        <td>{formatDateTime(selectedJobDetail.inspection_received_at)}</td>
-      </tr>
-      <tr>
-        <td>Final Payment</td>
-        <td>{selectedJobDetail.final_payment_received ? "Yes" : "No"}</td>
-      </tr>
-      <tr>
-        <td>Energized</td>
-        <td>{formatDateTime(selectedJobDetail.energized_at)}</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <h3>Internal Notes</h3>
-  {comments.length === 0 ? (
-    <p>No notes recorded.</p>
-  ) : (
-    <ul>
-      {comments.map((comment) => (
-        <li key={comment.id}>
-          {new Date(comment.created_at).toLocaleString()} —{" "}
-          {comment.comment_body}
-        </li>
-      ))}
-    </ul>
-  )}
-
-  <h3>Documents / Photos</h3>
-  {documents.length === 0 ? (
-    <p>No documents recorded.</p>
-  ) : (
-    <ul>
-      {documents.map((document) => (
-        <li key={document.id}>
-          {document.document_type}: {document.file_name}
-        </li>
-      ))}
-    </ul>
-  )}
-
-  <h3>Activity History</h3>
-  {activities.length === 0 ? (
-    <p>No activity recorded.</p>
-  ) : (
-    <ul>
-      {activities.map((activity) => (
-        <li key={activity.id}>
-          {new Date(activity.created_at).toLocaleString()} —{" "}
-          {activity.actor_email || "Unknown user"} — {activity.action_label}
-        </li>
-      ))}
-    </ul>
-  )}
-</section>
           <section style={sectionStyle}>
             <h2>Documents / Photos</h2>
 
@@ -1593,9 +1698,12 @@ export default function Home() {
                         </div>
                       ) : isImage ? (
                         <a href={fileUrl} target="_blank" rel="noreferrer">
-                          <img
+                          <Image
                             src={fileUrl}
                             alt={document.file_name}
+                            width={180}
+                            height={140}
+                            unoptimized
                             style={thumbnailStyle}
                           />
                         </a>
@@ -1702,15 +1810,11 @@ function getNextActions(job: JobListItem | undefined): WorkflowAction[] {
 function parseMoney(value: string) {
   const cleaned = value.replace(/[$,]/g, "").trim();
 
-  if (cleaned === "") {
-    return null;
-  }
+  if (cleaned === "") return null;
 
   const numberValue = Number(cleaned);
 
-  if (!Number.isFinite(numberValue) || numberValue < 0) {
-    return null;
-  }
+  if (!Number.isFinite(numberValue) || numberValue < 0) return null;
 
   return Math.round(numberValue * 100) / 100;
 }
@@ -1723,17 +1827,13 @@ function mmDdYyyyToIso(value: string, utcHour: number) {
   const trimmed = value.trim();
   const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(trimmed);
 
-  if (!match) {
-    return null;
-  }
+  if (!match) return null;
 
   const month = Number(match[1]);
   const day = Number(match[2]);
   const year = Number(match[3]);
 
-  if (month < 1 || month > 12 || day < 1 || day > 31) {
-    return null;
-  }
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
 
   const testDate = new Date(Date.UTC(year, month - 1, day));
 
@@ -1787,15 +1887,8 @@ function formatActivityKey(key: string) {
 
 function formatActivityValue(value: unknown) {
   if (value === null || value === undefined) return "-";
-
-  if (typeof value === "boolean") {
-    return value ? "Yes" : "No";
-  }
-
-  if (typeof value === "number") {
-    return String(value);
-  }
-
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number") return String(value);
   return String(value);
 }
 
@@ -1866,10 +1959,10 @@ function ActionButton({
       style={{
         padding: "10px 14px",
         cursor: disabled ? "not-allowed" : "pointer",
-        background: disabled ? "#cccccc" : "#111111",
+        background: disabled ? "#cccccc" : "#1f4d3a",
         color: disabled ? "#666666" : "#ffffff",
-        border: "1px solid #111111",
-        borderRadius: "4px",
+        border: "1px solid #143528",
+        borderRadius: "999px",
       }}
     >
       {children}
@@ -1884,8 +1977,8 @@ function TableHeader({ children }: { children: React.ReactNode }) {
         borderBottom: "2px solid #ccc",
         textAlign: "left",
         padding: "10px",
-        background: "#f2f2f2",
-        color: "#111111",
+        background: "#e3efe8",
+        color: "#143528",
       }}
     >
       {children}
@@ -1911,9 +2004,27 @@ function TableCell({ children }: { children: React.ReactNode }) {
 const mainStyle: React.CSSProperties = {
   padding: "40px",
   fontFamily: "Arial, sans-serif",
-  background: "#ffffff",
+  background: "transparent",
   color: "#111111",
   minHeight: "100vh",
+};
+
+const brandHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "16px",
+  flexWrap: "wrap",
+};
+
+const logoStyle: React.CSSProperties = {
+  width: "84px",
+  height: "84px",
+  objectFit: "contain",
+  borderRadius: "999px",
+  background: "#fffaf0",
+  padding: "6px",
+  border: "2px solid #d8c8a3",
+  boxShadow: "0 8px 20px rgba(20, 53, 40, 0.18)",
 };
 
 const topBarStyle: React.CSSProperties = {
@@ -1926,9 +2037,10 @@ const topBarStyle: React.CSSProperties = {
 
 const messageStyle: React.CSSProperties = {
   padding: "12px",
-  border: "1px solid #ccc",
-  background: "#f7f7f7",
+  border: "1px solid #d8c8a3",
+  background: "#fffaf0",
   color: "#111111",
+  borderRadius: "12px",
 };
 
 const dashboardGridStyle: React.CSSProperties = {
@@ -1939,30 +2051,33 @@ const dashboardGridStyle: React.CSSProperties = {
 };
 
 const dashboardCardStyle: React.CSSProperties = {
-  border: "1px solid #ccc",
+  border: "1px solid #d8c8a3",
   padding: "20px",
-  background: "#ffffff",
+  background: "#fffaf0",
   color: "#111111",
+  borderRadius: "14px",
 };
 
 const sectionStyle: React.CSSProperties = {
   marginTop: "40px",
   maxWidth: "1000px",
-  background: "#ffffff",
+  background: "#fffaf0",
   color: "#111111",
 };
 
 const panelStyle: React.CSSProperties = {
   marginTop: "16px",
   padding: "16px",
-  border: "1px solid #ccc",
-  background: "#fafafa",
+  border: "1px solid #d8c8a3",
+  background: "#fffdf7",
+  borderRadius: "14px",
 };
 
 const emptyStateStyle: React.CSSProperties = {
   padding: "16px",
   border: "1px dashed #999",
-  background: "#fafafa",
+  background: "#fffdf7",
+  borderRadius: "12px",
 };
 
 const labelStyle: React.CSSProperties = {
@@ -1979,28 +2094,28 @@ const inputStyle: React.CSSProperties = {
   marginTop: "4px",
   background: "#ffffff",
   color: "#111111",
-  border: "1px solid #999999",
-  borderRadius: "4px",
+  border: "1px solid #d8c8a3",
+  borderRadius: "10px",
 };
 
 const buttonStyle: React.CSSProperties = {
   marginTop: "16px",
   padding: "10px 16px",
   cursor: "pointer",
-  background: "#111111",
+  background: "#1f4d3a",
   color: "#ffffff",
-  border: "1px solid #111111",
-  borderRadius: "4px",
+  border: "1px solid #143528",
+  borderRadius: "999px",
 };
 
 const secondaryButtonStyle: React.CSSProperties = {
   marginTop: "16px",
   padding: "10px 16px",
   cursor: "pointer",
-  background: "#ffffff",
-  color: "#111111",
-  border: "1px solid #111111",
-  borderRadius: "4px",
+  background: "#fffaf0",
+  color: "#143528",
+  border: "1px solid #c89b3c",
+  borderRadius: "999px",
 };
 
 const buttonRowStyle: React.CSSProperties = {
@@ -2013,9 +2128,10 @@ const buttonRowStyle: React.CSSProperties = {
 const detailCardStyle: React.CSSProperties = {
   marginTop: "16px",
   padding: "16px",
-  border: "1px solid #ccc",
-  background: "#fafafa",
+  border: "1px solid #d8c8a3",
+  background: "#fffdf7",
   color: "#111111",
+  borderRadius: "14px",
 };
 
 const detailGridStyle: React.CSSProperties = {
@@ -2026,14 +2142,16 @@ const detailGridStyle: React.CSSProperties = {
 
 const noteCardStyle: React.CSSProperties = {
   padding: "12px",
-  border: "1px solid #ccc",
-  background: "#fafafa",
+  border: "1px solid #d8c8a3",
+  background: "#fffdf7",
+  borderRadius: "12px",
 };
 
 const activityCardStyle: React.CSSProperties = {
   padding: "12px",
-  border: "1px solid #ccc",
-  background: "#fafafa",
+  border: "1px solid #d8c8a3",
+  background: "#fffdf7",
+  borderRadius: "12px",
 };
 
 const activityDetailsStyle: React.CSSProperties = {
@@ -2044,6 +2162,7 @@ const activityDetailsStyle: React.CSSProperties = {
   fontSize: "13px",
   display: "grid",
   gap: "6px",
+  borderRadius: "10px",
 };
 
 const activityDetailRowStyle: React.CSSProperties = {
@@ -2060,10 +2179,11 @@ const fileGridStyle: React.CSSProperties = {
 };
 
 const fileCardStyle: React.CSSProperties = {
-  border: "1px solid #ccc",
+  border: "1px solid #d8c8a3",
   padding: "10px",
-  background: "#fafafa",
+  background: "#fffdf7",
   color: "#111111",
+  borderRadius: "12px",
 };
 
 const thumbnailStyle: React.CSSProperties = {
@@ -2073,6 +2193,7 @@ const thumbnailStyle: React.CSSProperties = {
   border: "1px solid #ccc",
   marginBottom: "8px",
   background: "#ffffff",
+  borderRadius: "10px",
 };
 
 const filePlaceholderStyle: React.CSSProperties = {
@@ -2086,6 +2207,7 @@ const filePlaceholderStyle: React.CSSProperties = {
   textAlign: "center",
   padding: "8px",
   color: "#111111",
+  borderRadius: "10px",
 };
 
 const tableStyle: React.CSSProperties = {
@@ -2094,7 +2216,4 @@ const tableStyle: React.CSSProperties = {
   marginTop: "12px",
   background: "#ffffff",
   color: "#111111",
-};
-const printPacketStyle: React.CSSProperties = {
-  display: "none",
 };
