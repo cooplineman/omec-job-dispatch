@@ -1450,6 +1450,17 @@ setConstructionStatusNote("");
   );
 }
 
+function canShowConstructionControls(job: JobDetail | null) {
+  if (!job) return false;
+
+  return [
+    "ready_for_construction",
+    "in_construction",
+    "waiting_on_inspection",
+    "final_billing",
+    "closed_energized",
+  ].includes(job.current_stage);
+}
 function getNextActions(job: (JobListItem & { estimate_status?: string | null }) | undefined): WorkflowAction[] {
   if (!job) return [];
 
