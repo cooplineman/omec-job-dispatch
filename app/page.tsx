@@ -1454,10 +1454,12 @@ setConstructionStatusNote("");
 
 function canShowConstructionControls(job: JobDetail | null) {
   if (!job) return false;
-
   return [
     "ready_for_construction",
     "in_construction",
+    "waiting_on_material",
+    "waiting_on_member",
+    "waiting_on_easement",
     "waiting_on_inspection",
     "final_billing",
     "closed_energized",
