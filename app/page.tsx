@@ -642,27 +642,32 @@ export default function Home() {
       return { p_site_visit_at: isoDate };
     }
 
-    
+    if (actionId === "estimate_sent") {
+      if (estimateAmount.trim() === "") {
+        window.alert(
+          "Cannot mark estimate sent: enter an Estimate Amount, or enter 0 if no Aid to Construction is required."
+        );
+        setMessage(
+          "Cannot mark estimate sent: Estimate Amount is required, or enter 0 for no Aid to Construction."
+        );
+        return null;
+      }
+
       const amount = parseMoney(estimateAmount);
 
-      if (estimateAmount.trim() === "") {
-        window.alert("Cannot mark estimate sent: enter an Estimate Amount, or enter 0 if no Aid to Construction is required.");
-        return null;
-      }
-      
-      const amount = parseMoney(estimateAmount);
-      
       if (amount === null || amount < 0) {
         window.alert("Cannot mark estimate sent: enter a valid Estimate Amount.");
+        setMessage("Cannot mark estimate sent: valid Estimate Amount required.");
         return null;
       }
-      
+
       if (amount === 0) {
         const confirmed = window.confirm(
           "Confirm no Aid to Construction is required for this job?"
         );
-      
+
         if (!confirmed) {
+          setMessage("Estimate sent was canceled. Enter an Estimate Amount if Aid to Construction is required.");
           return null;
         }
       }
