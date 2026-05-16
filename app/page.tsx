@@ -161,6 +161,8 @@ export default function Home() {
   const [estimateAmount, setEstimateAmount] = useState("0");
   const [depositRequired, setDepositRequired] = useState("0");
   const [depositReceived, setDepositReceived] = useState("0");
+  const [constructionStatus, setConstructionStatus] = useState("pending");
+const [constructionStatusNote, setConstructionStatusNote] = useState("");
 
   const [form, setForm] = useState({
     applicantName: "",
@@ -380,6 +382,8 @@ export default function Home() {
       );
       setDepositRequired(String(detailData.deposit_required ?? 0));
       setDepositReceived(String(detailData.deposit_received ?? 0));
+      setConstructionStatus(detailData.construction_status || "pending");
+setConstructionStatusNote("");
 
       setEditInfoForm({
         applicantName: detailData.applicant_name || "",
@@ -528,6 +532,47 @@ export default function Home() {
     }
 
     setSavingEditInfo(false);
+  }
+  async function saveConstructionStatus(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+  
+    if (!canEdit) {
+      setMessage("You do not have permission to update construction status.");
+      return;
+    }
+  
+    if (!selectedJobNumber) {
+      setMessage("Select a job first.");
+      return;
+    }
+  
+    if (constructionStatus === "waiting_on_member" && !constructionStatusNote.trim()) {
+      window.alert(
+        "Cannot save Waiting on Member: add a note explaining what is needed from the member."
+      );
+      setMessage("Waiting on Member requires an explanatory note.");
+      return;
+    }
+  
+    setUpdating(true);
+    setMessage("");
+  
+    const { error } = await supabase.rpc("update_job_construction_status", {
+      p_job_number: selectedJobNumber,
+      p_construction_status: constructionStatus,
+      p_note: constructionStatusNote.trim(),
+    });
+  
+    if (error) {
+      setMessage(`Error updating construction status: ${error.message}`);
+    } else {
+      setMessage(`Updated construction status for ${selectedJobNumber}`);
+      setConstructionStatusNote("");
+      await loadDashboard();
+      await loadSelectedJobData(selectedJobNumber);
+    }
+  
+    setUpdating(false);
   }
 
   async function updateWorkflow(label: string, updates: WorkflowUpdates) {
@@ -1171,7 +1216,50 @@ export default function Home() {
                   <FormInput label="Deposit Received" value={depositReceived} onChange={setDepositReceived} />
                 </div>
               </section>
+              <section style={sectionStyle}>
+  <h2>Construction Status</h2>
 
+  <p>
+    Use this when a job is ready for construction, in progress,
+    waiting on materials, waiting on the member, or complete.
+  </p>
+
+  <form onSubmit={saveConstructionStatus} style={panelStyle}>
+    <label style={labelStyle}>
+      Construction Status
+      <select
+        value={constructionStatus}
+        onChange={(event) => setConstructionStatus(event.target.value)}
+        style={inputStyle}
+      >
+        <option value="pending">Pending</option>
+        <option value="in_progress">In Progress</option>
+        <option value="waiting_on_material">Waiting on Materials</option>
+        <option value="waiting_on_member">Waiting on Member</option>
+        <option value="completed">Completed</option>
+        <option value="not_required">Not Required</option>
+      </select>
+    </label>
+
+    <label style={labelStyle}>
+      Construction Status Note
+      <textarea
+        value={constructionStatusNote}
+        onChange={(event) => setConstructionStatusNote(event.target.value)}
+        style={{ ...inputStyle, minHeight: "90px" }}
+        placeholder="Required if Waiting on Member. Example: Need easement signed, trench dug, meter base corrected..."
+      />
+    </label>
+
+    <button
+      type="submit"
+      disabled={updating || !selectedJobNumber}
+      style={buttonStyle}
+    >
+      Save Construction Status
+    </button>
+  </form>
+</section>
               <section style={sectionStyle}>
                 <h2>Update Job Status</h2>
 
