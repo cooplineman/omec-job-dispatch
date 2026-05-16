@@ -1260,9 +1260,7 @@ export default function Home() {
                   <button type="submit" disabled={updating || !selectedJobNumber} style={buttonStyle}>
                     Save Construction Status
                   </button>
-                </form>
-                </div>
-              </section>
+                $1</section>
 
               <section style={sectionStyle}>
                 <h2>Update Job Status</h2>
