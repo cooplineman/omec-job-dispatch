@@ -663,19 +663,24 @@ export default function Home() {
 
       if (amount === 0) {
         const confirmed = window.confirm(
-          "Confirm no Aid to Construction is required for this job?"
+          "Confirm no Aid to Construction is required for this job? This will skip the deposit workflow and move the job toward construction."
         );
-
+      
         if (!confirmed) {
-          setMessage("Estimate sent was canceled. Enter an Estimate Amount if Aid to Construction is required.");
+          setMessage(
+            "Estimate sent was canceled. Enter an Estimate Amount if Aid to Construction is required."
+          );
           return null;
         }
+      
+        return {
+          p_estimate_status: "signed",
+          p_estimate_amount: 0,
+          p_deposit_required: 0,
+          p_deposit_received: 0,
+          p_construction_status: "pending",
+        };
       }
-
-      return {
-        p_estimate_status: "sent",
-        p_estimate_amount: amount,
-      };
     }
 
     if (actionId === "estimate_signed") {
