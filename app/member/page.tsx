@@ -1,6 +1,7 @@
 "use client";
 
-// Member portal query is filtered by logged-in email.
+// Member portal: explicit access RPC + non-hanging auth check.
+
 
 
 import { useEffect, useMemo, useState } from "react";
@@ -59,10 +60,23 @@ export default function MemberPortal() {
   );
 
   useEffect(() => {
-    async function loadSession() {
-      const { data } = await supabase.auth.getSession();
-      const sessionUser = data.session?.user ?? null;
+    let isMounted = true;
 
+    async function loadSession() {
+      setAuthLoading(true);
+
+      const { data, error } = await supabase.auth.getSession();
+
+      if (!isMounted) return;
+
+      if (error) {
+        setMessage(`Session check failed: ${error.message}`);
+        setUser(null);
+        setAuthLoading(false);
+        return;
+      }
+
+      const sessionUser = data.session?.user ?? null;
       setUser(sessionUser);
       setAuthLoading(false);
 
@@ -75,9 +89,13 @@ export default function MemberPortal() {
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        setUser(session?.user ?? null);
+        if (!isMounted) return;
 
-        if (session?.user) {
+        const sessionUser = session?.user ?? null;
+        setUser(sessionUser);
+        setAuthLoading(false);
+
+        if (sessionUser) {
           await loadMemberJobs();
         } else {
           setJobs([]);
@@ -87,6 +105,7 @@ export default function MemberPortal() {
     );
 
     return () => {
+      isMounted = false;
       listener.subscription.unsubscribe();
     };
   }, []);
@@ -112,6 +131,9 @@ export default function MemberPortal() {
   }
 
   async function signOut() {
+    setJobs([]);
+    setSelectedJobNumber("");
+    setUser(null);
     await supabase.auth.signOut();
     setMessage("Logged out.");
   }
@@ -120,29 +142,20 @@ export default function MemberPortal() {
     setLoading(true);
     setMessage("");
 
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    const currentEmail = userData.user?.email || "";
-
-    if (userError || !currentEmail) {
-      setMessage("Could not confirm login. Please log out and log back in.");
-      setJobs([]);
-      setLoading(false);
-      return;
-    }
-
-    const { data, error } = await supabase.rpc(
-      "get_my_member_jobs"
-    );
+    const { data, error } = await supabase.rpc("get_my_member_jobs");
 
     if (error) {
       setMessage(`Error loading member portal: ${error.message}`);
       setJobs([]);
+      setSelectedJobNumber("");
     } else {
-      const loadedJobs = data || [];
+      const loadedJobs = (data || []) as MemberJob[];
       setJobs(loadedJobs);
 
       if (loadedJobs.length > 0) {
         setSelectedJobNumber(loadedJobs[0].job_number);
+      } else {
+        setSelectedJobNumber("");
       }
     }
 
