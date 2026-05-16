@@ -130,11 +130,9 @@ export default function MemberPortal() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("member_job_portal_view")
-      .select("*")
-      .eq("email", currentEmail)
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.rpc(
+      "get_my_member_jobs"
+    );
 
     if (error) {
       setMessage(`Error loading member portal: ${error.message}`);
