@@ -120,10 +120,20 @@ export default function MemberPortal() {
     setLoading(true);
     setMessage("");
 
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    const currentEmail = userData.user?.email || "";
+
+    if (userError || !currentEmail) {
+      setMessage("Could not confirm login. Please log out and log back in.");
+      setJobs([]);
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase
       .from("member_job_portal_view")
       .select("*")
-      .eq("email", user?.email || "")
+      .eq("email", currentEmail)
       .order("created_at", { ascending: false });
 
     if (error) {
