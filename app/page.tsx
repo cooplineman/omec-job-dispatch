@@ -375,7 +375,9 @@ export default function Home() {
 
       await loadSignedFileUrls(loadedDocuments);
 
-      setEstimateAmount(String(detailData.estimate_amount ?? 0));
+      setEstimateAmount(
+        detailData.estimate_amount === null ? "" : String(detailData.estimate_amount)
+      );
       setDepositRequired(String(detailData.deposit_required ?? 0));
       setDepositReceived(String(detailData.deposit_received ?? 0));
 
@@ -640,15 +642,29 @@ export default function Home() {
       return { p_site_visit_at: isoDate };
     }
 
-    if (actionId === "estimate_sent") {
+    
       const amount = parseMoney(estimateAmount);
 
-      if (amount === null || amount <= 0) {
-        window.alert(
-          "Cannot mark estimate sent: enter an Estimate Amount greater than 0 first."
-        );
-        setMessage("Cannot mark estimate sent: Estimate Amount is required.");
+      if (estimateAmount.trim() === "") {
+        window.alert("Cannot mark estimate sent: enter an Estimate Amount, or enter 0 if no Aid to Construction is required.");
         return null;
+      }
+      
+      const amount = parseMoney(estimateAmount);
+      
+      if (amount === null || amount < 0) {
+        window.alert("Cannot mark estimate sent: enter a valid Estimate Amount.");
+        return null;
+      }
+      
+      if (amount === 0) {
+        const confirmed = window.confirm(
+          "Confirm no Aid to Construction is required for this job?"
+        );
+      
+        if (!confirmed) {
+          return null;
+        }
       }
 
       return {
