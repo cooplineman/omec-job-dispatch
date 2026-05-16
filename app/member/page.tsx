@@ -1,5 +1,8 @@
 "use client";
 
+// Member portal query is filtered by logged-in email.
+
+
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { createClient, type User } from "@supabase/supabase-js";
@@ -120,6 +123,7 @@ export default function MemberPortal() {
     const { data, error } = await supabase
       .from("member_job_portal_view")
       .select("*")
+      .eq("email", user?.email || "")
       .order("created_at", { ascending: false });
 
     if (error) {
