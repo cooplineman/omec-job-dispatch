@@ -630,7 +630,10 @@ export default function Home() {
       const isoDate = mmDdYyyyToIso(siteVisitDate, 13);
 
       if (!isoDate) {
-        setMessage("Enter Site Visit Date in MM-DD-YYYY format.");
+        window.alert(
+        "Cannot schedule site visit: enter Site Visit Date in MM-DD-YYYY format."
+      );
+      setMessage("Cannot schedule site visit: valid Site Visit Date required.");
         return null;
       }
 
@@ -641,7 +644,10 @@ export default function Home() {
       const amount = parseMoney(estimateAmount);
 
       if (amount === null || amount <= 0) {
-        setMessage("Enter an Estimate Amount greater than 0 before marking estimate sent.");
+        window.alert(
+          "Cannot mark estimate sent: enter an Estimate Amount greater than 0 first."
+        );
+        setMessage("Cannot mark estimate sent: Estimate Amount is required.");
         return null;
       }
 
@@ -656,7 +662,10 @@ export default function Home() {
       const received = parseMoney(depositReceived);
 
       if (required === null || received === null) {
-        setMessage("Enter valid deposit amounts, such as 2500 or 2500.00.");
+        window.alert(
+          "Cannot mark estimate signed: enter valid Deposit Required and Deposit Received amounts."
+        );
+        setMessage("Cannot mark estimate signed: valid deposit amounts required.");
         return null;
       }
 
@@ -671,7 +680,10 @@ export default function Home() {
       const received = parseMoney(depositReceived);
 
       if (received === null) {
-        setMessage("Enter a valid Deposit Received amount.");
+        window.alert(
+        "Cannot update deposit: enter a valid Deposit Received amount."
+      );
+      setMessage("Cannot update deposit: valid Deposit Received amount required.");
         return null;
       }
 
@@ -692,7 +704,10 @@ export default function Home() {
       const isoDate = mmDdYyyyToIso(inspectionDate, 15);
 
       if (!isoDate) {
-        setMessage("Enter Inspection Date in MM-DD-YYYY format.");
+        window.alert(
+        "Cannot mark inspection received: enter Inspection Date in MM-DD-YYYY format."
+      );
+      setMessage("Cannot mark inspection received: valid Inspection Date required.");
         return null;
       }
 
@@ -710,7 +725,10 @@ export default function Home() {
       const isoDate = mmDdYyyyToIso(energizedDate, 14);
 
       if (!isoDate) {
-        setMessage("Enter Energized Date in MM-DD-YYYY format.");
+        window.alert(
+        "Cannot close job: enter Energized Date in MM-DD-YYYY format."
+      );
+      setMessage("Cannot close job: valid Energized Date required.");
         return null;
       }
 
