@@ -1216,6 +1216,7 @@ setConstructionStatusNote("");
                   <FormInput label="Deposit Received" value={depositReceived} onChange={setDepositReceived} />
                 </div>
               </section>
+              {canShowConstructionControls(selectedJobDetail) && (
               <section style={sectionStyle}>
   <h2>Construction Status</h2>
 
@@ -1260,7 +1261,8 @@ setConstructionStatusNote("");
     </button>
   </form>
 </section>
-              <section style={sectionStyle}>
+                            )}
+<section style={sectionStyle}>
                 <h2>Update Job Status</h2>
 
                 <div style={buttonRowStyle}>
