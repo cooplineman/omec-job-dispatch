@@ -541,14 +541,8 @@ setConstructionStatusNote("");
       return;
     }
 
-    if (!selectedJobDetail) {
+    if (!selectedJobNumber) {
       setMessage("Select a job first.");
-      return;
-    }
-
-    if (!selectedJobDetail.email) {
-      window.alert("Cannot generate member access link: this job does not have a member email address.");
-      setMessage("Cannot generate member access link: member email is missing.");
       return;
     }
 
@@ -556,23 +550,13 @@ setConstructionStatusNote("");
     setMessage("");
     setMemberAccessLink("");
 
-    const { data: memberData, error: memberError } = await supabase
-      .from("members")
-      .select("id")
-      .eq("email", selectedJobDetail.email)
-      .limit(1)
-      .single();
-
-    if (memberError || !memberData?.id) {
-      setMessage(`Could not find member record for ${selectedJobDetail.email}.`);
-      setUpdating(false);
-      return;
-    }
-
-    const { data, error } = await supabase.rpc("create_member_access_token", {
-      p_member_id: memberData.id,
-      p_expires_in_hours: 168,
-    });
+    const { data, error } = await supabase.rpc(
+      "create_member_access_token_by_job",
+      {
+        p_job_number: selectedJobNumber,
+        p_expires_in_hours: 168,
+      }
+    );
 
     if (error) {
       setMessage(`Error generating member access link: ${error.message}`);
@@ -583,8 +567,13 @@ setConstructionStatusNote("");
           : "https://omecconnect.com";
 
       const accessLink = `${baseUrl}/member-access/${data}`;
+
       setMemberAccessLink(accessLink);
-      setMessage("Generated member access link. Copy and send it to the member when ready.");
+      setMessage("Member access link generated successfully.");
+
+      window.alert(`Member link generated:
+
+${accessLink}`);
     }
 
     setUpdating(false);
