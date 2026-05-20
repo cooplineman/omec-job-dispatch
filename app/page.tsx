@@ -147,6 +147,7 @@ export default function Home() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedJobNumber, setSelectedJobNumber] = useState("");
   const [message, setMessage] = useState("");
+  const [memberAccessLink, setMemberAccessLink] = useState("");
   const [documentType, setDocumentType] = useState("site_photo");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [commentBody, setCommentBody] = useState("");
@@ -334,6 +335,7 @@ const [constructionStatusNote, setConstructionStatusNote] = useState("");
       setSignedFileUrls({});
       setComments([]);
       setActivities([]);
+      setMemberAccessLink("");
       setShowEditInfoForm(false);
       return;
     }
@@ -533,6 +535,61 @@ setConstructionStatusNote("");
 
     setSavingEditInfo(false);
   }
+  async function generateMemberAccessLink() {
+    if (!canEdit) {
+      setMessage("You do not have permission to generate member access links.");
+      return;
+    }
+
+    if (!selectedJobDetail) {
+      setMessage("Select a job first.");
+      return;
+    }
+
+    if (!selectedJobDetail.email) {
+      window.alert("Cannot generate member access link: this job does not have a member email address.");
+      setMessage("Cannot generate member access link: member email is missing.");
+      return;
+    }
+
+    setUpdating(true);
+    setMessage("");
+    setMemberAccessLink("");
+
+    const { data: memberData, error: memberError } = await supabase
+      .from("members")
+      .select("id")
+      .eq("email", selectedJobDetail.email)
+      .limit(1)
+      .single();
+
+    if (memberError || !memberData?.id) {
+      setMessage(`Could not find member record for ${selectedJobDetail.email}.`);
+      setUpdating(false);
+      return;
+    }
+
+    const { data, error } = await supabase.rpc("create_member_access_token", {
+      p_member_id: memberData.id,
+      p_expires_in_hours: 168,
+    });
+
+    if (error) {
+      setMessage(`Error generating member access link: ${error.message}`);
+    } else {
+      const baseUrl =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "https://omecconnect.com";
+
+      const accessLink = `${baseUrl}/member-access/${data}`;
+      setMemberAccessLink(accessLink);
+      setMessage("Generated member access link. Copy and send it to the member when ready.");
+    }
+
+    setUpdating(false);
+  }
+
   async function saveConstructionStatus(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
   
@@ -1202,6 +1259,50 @@ setConstructionStatusNote("");
 
           {canEdit && (
             <>
+              <section style={sectionStyle}>
+                <h2>Member Access Link</h2>
+
+                <p>
+                  Generate a temporary passwordless link that lets this member view their public job status.
+                  No email is sent automatically yet.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={generateMemberAccessLink}
+                  disabled={updating || !selectedJobNumber}
+                  style={buttonStyle}
+                >
+                  Generate Member Access Link
+                </button>
+
+                {memberAccessLink && (
+                  <div style={panelStyle}>
+                    <label style={labelStyle}>
+                      Member Access Link
+                      <input
+                        value={memberAccessLink}
+                        readOnly
+                        onFocus={(event) => event.target.select()}
+                        style={inputStyle}
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(memberAccessLink)}
+                      style={secondaryButtonStyle}
+                    >
+                      Copy Link
+                    </button>
+
+                    <p style={{ fontSize: "13px", color: "#555" }}>
+                      Link expires in 7 days. Generating a new link replaces the prior active link.
+                    </p>
+                  </div>
+                )}
+              </section>
+
               <section style={sectionStyle}>
                 <h2>Workflow Inputs</h2>
 
