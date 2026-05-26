@@ -34,6 +34,15 @@ type TimelineStep = {
   detail?: string;
 };
 
+type JobDocument = {
+  id: string;
+  job_number: string;
+  document_type: string;
+  file_name: string;
+  storage_path: string;
+  created_at: string;
+};
+
 export default function MemberAccessPage({
   params,
 }: {
@@ -43,6 +52,8 @@ export default function MemberAccessPage({
   const [selectedJobNumber, setSelectedJobNumber] = useState("");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [documents, setDocuments] = useState<JobDocument[]>([]);
+  const [signedFileUrls, setSignedFileUrls] = useState<Record<string, string>>({});
 
   const selectedJob = useMemo(
     () => jobs.find((job) => job.job_number === selectedJobNumber) || jobs[0],
@@ -67,12 +78,15 @@ export default function MemberAccessPage({
       if (error) {
         setMessage(`Unable to load access link: ${error.message}`);
         setJobs([]);
+        setDocuments([]);
+        setSignedFileUrls({});
       } else {
         const loadedJobs = (data || []) as MemberJob[];
         setJobs(loadedJobs);
 
         if (loadedJobs.length > 0) {
           setSelectedJobNumber(loadedJobs[0].job_number);
+          await loadDocuments(params.token);
         }
       }
 
@@ -81,6 +95,50 @@ export default function MemberAccessPage({
 
     loadAccess();
   }, [params.token]);
+
+  async function loadDocuments(token: string) {
+    const { data, error } = await supabase.rpc(
+      "get_member_documents_by_access_token",
+      { p_token: token }
+    );
+
+    if (error) {
+      setMessage(`Unable to load member documents: ${error.message}`);
+      setDocuments([]);
+      setSignedFileUrls({});
+      return;
+    }
+
+    const loadedDocuments = (data || []) as JobDocument[];
+    setDocuments(loadedDocuments);
+
+    if (loadedDocuments.length === 0) {
+      setSignedFileUrls({});
+      return;
+    }
+
+    const paths = loadedDocuments.map((document) => document.storage_path);
+
+    const { data: signedData, error: signedError } = await supabase.storage
+      .from("job-documents")
+      .createSignedUrls(paths, 60 * 60);
+
+    if (signedError) {
+      setMessage(`Unable to prepare document links: ${signedError.message}`);
+      setSignedFileUrls({});
+      return;
+    }
+
+    const urlMap: Record<string, string> = {};
+
+    signedData?.forEach((signedFile, index) => {
+      if (signedFile.signedUrl) {
+        urlMap[paths[index]] = signedFile.signedUrl;
+      }
+    });
+
+    setSignedFileUrls(urlMap);
+  }
 
   if (loading) {
     return (
@@ -199,6 +257,51 @@ export default function MemberAccessPage({
                 </div>
               ))}
             </div>
+          </section>
+
+          <section style={sectionStyle}>
+            <h2>Documents</h2>
+
+            {documentsForSelectedJob(documents, selectedJob.job_number).length === 0 ? (
+              <p style={emptyStateStyle}>
+                No public documents are available for this service request yet.
+              </p>
+            ) : (
+              <div style={documentGridStyle}>
+                {documentsForSelectedJob(documents, selectedJob.job_number).map(
+                  (document) => {
+                    const fileUrl = signedFileUrls[document.storage_path];
+
+                    return (
+                      <div key={document.id} style={documentCardStyle}>
+                        <div style={documentTypeStyle}>
+                          {formatDocumentType(document.document_type)}
+                        </div>
+
+                        <div style={documentNameStyle}>{document.file_name}</div>
+
+                        <div style={mutedStyle}>
+                          Uploaded {formatDateTime(document.created_at)}
+                        </div>
+
+                        {fileUrl ? (
+                          <a
+                            href={fileUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={documentLinkStyle}
+                          >
+                            View Document
+                          </a>
+                        ) : (
+                          <span style={mutedStyle}>Preparing secure link...</span>
+                        )}
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+            )}
           </section>
 
           <section style={sectionStyle}>
@@ -380,6 +483,20 @@ function formatPublicStatus(value: string | null | undefined) {
   return map[normalized] || normalized;
 }
 
+function documentsForSelectedJob(documents: JobDocument[], jobNumber: string) {
+  return documents.filter((document) => document.job_number === jobNumber);
+}
+
+function formatDocumentType(value: string | null | undefined) {
+  if (!value) return "Document";
+
+  return value
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function getStepIcon(status: TimelineStep["status"]) {
   if (status === "complete") return "●";
   if (status === "current") return "◐";
@@ -540,5 +657,42 @@ const timelineIconStyle: React.CSSProperties = {
 };
 
 const timelineLabelStyle: React.CSSProperties = {
+  fontWeight: 700,
+};
+
+
+const documentGridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+  gap: "14px",
+};
+
+const documentCardStyle: React.CSSProperties = {
+  padding: "14px",
+  border: "1px solid #d8c8a3",
+  borderRadius: "12px",
+  background: "#fffdf7",
+};
+
+const documentTypeStyle: React.CSSProperties = {
+  fontSize: "12px",
+  fontWeight: 700,
+  color: "#555555",
+};
+
+const documentNameStyle: React.CSSProperties = {
+  marginTop: "6px",
+  fontWeight: 700,
+  overflowWrap: "anywhere",
+};
+
+const documentLinkStyle: React.CSSProperties = {
+  display: "inline-block",
+  marginTop: "12px",
+  padding: "8px 12px",
+  borderRadius: "999px",
+  background: "#1f4d3a",
+  color: "#ffffff",
+  textDecoration: "none",
   fontWeight: 700,
 };
