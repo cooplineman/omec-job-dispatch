@@ -54,6 +54,9 @@ export default function MemberAccessPage({
   const [message, setMessage] = useState("");
   const [documents, setDocuments] = useState<JobDocument[]>([]);
   const [signedFileUrls, setSignedFileUrls] = useState<Record<string, string>>({});
+  const [uploading, setUploading] = useState(false);
+  const [memberDocumentType, setMemberDocumentType] = useState("site_photo");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const selectedJob = useMemo(
     () => jobs.find((job) => job.job_number === selectedJobNumber) || jobs[0],
@@ -138,6 +141,49 @@ export default function MemberAccessPage({
     });
 
     setSignedFileUrls(urlMap);
+  }
+
+  async function uploadMemberDocument(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedJob || !selectedFile) return;
+
+    setUploading(true);
+
+    const safeFileName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+
+    const storagePath =
+      `${selectedJob.job_number}/member-${Date.now()}-${safeFileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("job-documents")
+      .upload(storagePath, selectedFile);
+
+    if (uploadError) {
+      setMessage(uploadError.message);
+      setUploading(false);
+      return;
+    }
+
+    const { error } = await supabase.rpc(
+      "add_member_document_by_access_token",
+      {
+        p_token: params.token,
+        p_job_number: selectedJob.job_number,
+        p_document_type: memberDocumentType,
+        p_file_name: selectedFile.name,
+        p_storage_path: storagePath,
+      }
+    );
+
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setSelectedFile(null);
+      await loadDocuments(params.token);
+    }
+
+    setUploading(false);
   }
 
   if (loading) {
@@ -260,6 +306,39 @@ export default function MemberAccessPage({
           </section>
 
           <section style={sectionStyle}>
+            <h2>Upload Photos / Inspection</h2>
+
+            <form onSubmit={uploadMemberDocument}>
+              <label style={labelStyle}>
+                Upload Type
+                <select
+                  value={memberDocumentType}
+                  onChange={(e)=>setMemberDocumentType(e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="site_photo">Site Photo</option>
+                  <option value="construction_photo">Construction Photo</option>
+                  <option value="inspection">Inspection</option>
+                </select>
+              </label>
+
+              <input
+                type="file"
+                onChange={(e)=>setSelectedFile(e.target.files?.[0] || null)}
+                style={{marginTop:"12px"}}
+              />
+
+              <button
+                type="submit"
+                disabled={uploading}
+                style={documentLinkStyle}
+              >
+                {uploading ? "Uploading..." : "Upload"}
+              </button>
+            </form>
+          </section>
+
+<section style={sectionStyle}>
             <h2>Documents</h2>
 
             {documentsForSelectedJob(documents, selectedJob.job_number).length === 0 ? (
@@ -279,6 +358,14 @@ export default function MemberAccessPage({
                         </div>
 
                         <div style={documentNameStyle}>{document.file_name}</div>
+
+                        {isImageDocument(document.file_name) && fileUrl && (
+                          <img
+                            src={fileUrl}
+                            alt={document.file_name}
+                            style={thumbnailStyle}
+                          />
+                        )}
 
                         <div style={mutedStyle}>
                           Uploaded {formatDateTime(document.created_at)}
@@ -485,6 +572,10 @@ function formatPublicStatus(value: string | null | undefined) {
 
 function documentsForSelectedJob(documents: JobDocument[], jobNumber: string) {
   return documents.filter((document) => document.job_number === jobNumber);
+}
+
+function isImageDocument(fileName: string) {
+  return /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
 }
 
 function formatDocumentType(value: string | null | undefined) {
@@ -695,4 +786,14 @@ const documentLinkStyle: React.CSSProperties = {
   color: "#ffffff",
   textDecoration: "none",
   fontWeight: 700,
+};
+
+
+const thumbnailStyle: React.CSSProperties = {
+  width:"100%",
+  maxHeight:"180px",
+  objectFit:"cover",
+  borderRadius:"10px",
+  marginTop:"10px",
+  marginBottom:"10px",
 };
