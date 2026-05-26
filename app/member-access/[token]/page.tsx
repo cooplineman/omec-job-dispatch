@@ -381,10 +381,10 @@ function formatPublicStatus(value: string | null | undefined) {
 }
 
 function getStepIcon(status: TimelineStep["status"]) {
-  if (status === "complete") return "✅";
-  if (status === "current") return "🔄";
-  if (status === "not_required") return "➖";
-  return "⬜";
+  if (status === "complete") return "●";
+  if (status === "current") return "◐";
+  if (status === "not_required") return "—";
+  return "○";
 }
 
 function formatEstimate(job: MemberJob) {
@@ -532,8 +532,11 @@ const timelineRowStyle: React.CSSProperties = {
 };
 
 const timelineIconStyle: React.CSSProperties = {
-  fontSize: "22px",
+  fontSize: "20px",
   lineHeight: "1",
+  minWidth: "24px",
+  fontWeight: 700,
+  color: "#143528",
 };
 
 const timelineLabelStyle: React.CSSProperties = {
