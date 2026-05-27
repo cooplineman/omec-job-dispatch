@@ -732,7 +732,10 @@ const shellStyle: React.CSSProperties = {
 };
 
 const sidebarStyle: React.CSSProperties = {
-  background: "linear-gradient(180deg, #003c25 0%, #00552d 42%, #002c1d 100%)",
+  backgroundImage:
+    "linear-gradient(rgba(0,40,24,0.35), rgba(0,40,24,0.55)), url('/omec-sidebar-bg.png')",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
   color: "#ffffff",
   padding: "28px 22px",
   position: "sticky",
