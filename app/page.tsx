@@ -557,7 +557,7 @@ setConstructionStatusNote("");
   }
   async function saveEstimateDepositAmounts() {
     if (!canEdit) {
-      setMessage("You do not have permission to update estimate/deposit amounts.");
+      setMessage("You do not have permission to update estimate/deposit/final payment amounts.");
       return;
     }
 
@@ -572,14 +572,17 @@ setConstructionStatusNote("");
       depositRequired.trim() === "" ? 0 : parseMoney(depositRequired);
     const parsedDepositReceived =
       depositReceived.trim() === "" ? 0 : parseMoney(depositReceived);
+    const parsedFinalPaymentRefund =
+      finalPaymentRefund.trim() === "" ? 0 : parseMoney(finalPaymentRefund);
 
     if (
-      parsedEstimate === null && estimateAmount.trim() !== "" ||
+      (parsedEstimate === null && estimateAmount.trim() !== "") ||
       parsedDepositRequired === null ||
-      parsedDepositReceived === null
+      parsedDepositReceived === null ||
+      parsedFinalPaymentRefund === null
     ) {
       window.alert("Enter valid dollar amounts before saving.");
-      setMessage("Cannot save: valid estimate/deposit amounts are required.");
+      setMessage("Cannot save: valid estimate/deposit/final payment amounts are required.");
       return;
     }
 
@@ -615,15 +618,15 @@ setConstructionStatusNote("");
       p_construction_status: null,
       p_inspection_received: null,
       p_inspection_received_at: null,
-      p_final_bill_amount: null,
+      p_final_bill_amount: parsedFinalPaymentRefund,
       p_final_payment_received: null,
       p_energized_at: null,
     });
 
     if (error) {
-      setMessage(`Error saving estimate/deposit amounts: ${error.message}`);
+      setMessage(`Error saving estimate/deposit/final payment amounts: ${error.message}`);
     } else {
-      setMessage(`Saved estimate/deposit amounts for ${selectedJobNumber}`);
+      setMessage(`Saved estimate/deposit/final payment amounts for ${selectedJobNumber}`);
       await loadDashboard();
       await loadSelectedJobData(selectedJobNumber);
     }
@@ -1446,7 +1449,7 @@ ${accessLink}`);
                   disabled={updating || !selectedJobNumber}
                   style={buttonStyle}
                 >
-                  Save Estimate / Deposit Amounts
+                  Save Estimate / Deposit / Final Payment
                 </button>
               </section>
               {canShowConstructionControls(selectedJobDetail) && (
