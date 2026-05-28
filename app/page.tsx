@@ -154,6 +154,8 @@ export default function Home() {
 
   const [searchText, setSearchText] = useState("");
   const [gateFilter, setGateFilter] = useState("all");
+  const [jobListCollapsed, setJobListCollapsed] = useState(false);
+  const [flashJobNumber, setFlashJobNumber] = useState("");
 
   const [siteVisitDate, setSiteVisitDate] = useState("05-20-2026");
   const [inspectionDate, setInspectionDate] = useState("05-21-2026");
@@ -215,6 +217,11 @@ const [constructionStatusNote, setConstructionStatusNote] = useState("");
     });
   }, [jobs, searchText, gateFilter]);
 
+  const visibleJobs =
+    jobListCollapsed && selectedJobNumber
+      ? filteredJobs.filter((job) => job.job_number === selectedJobNumber)
+      : filteredJobs;
+
   useEffect(() => {
     async function loadSession() {
       const { data } = await supabase.auth.getSession();
@@ -266,6 +273,16 @@ const [constructionStatusNote, setConstructionStatusNote] = useState("");
       loadSelectedJobData(selectedJobNumber);
     }
   }, [selectedJobNumber, user]);
+
+  function selectJobFromList(jobNumber: string) {
+    setFlashJobNumber(jobNumber);
+    setSelectedJobNumber(jobNumber);
+
+    window.setTimeout(() => {
+      setJobListCollapsed(true);
+      setFlashJobNumber("");
+    }, 220);
+  }
 
   async function loadUserRole() {
     const { data, error } = await supabase
@@ -772,6 +789,11 @@ ${accessLink}`);
           p_construction_status: "pending",
         };
       }
+
+      return {
+        p_estimate_status: "sent",
+        p_estimate_amount: amount,
+      };
     }
 
     if (actionId === "estimate_signed") {
@@ -1106,9 +1128,21 @@ ${accessLink}`);
           <p>Loading jobs...</p>
         ) : (
           <>
-            <p>
-              Showing {filteredJobs.length} of {jobs.length} jobs. Click a row to view details.
-            </p>
+            <div style={jobListHeaderRowStyle}>
+              <p>
+                Showing {visibleJobs.length} of {jobs.length} jobs. Click a row to view details.
+              </p>
+
+              {jobListCollapsed && selectedJobNumber && (
+                <button
+                  type="button"
+                  onClick={() => setJobListCollapsed(false)}
+                  style={secondaryButtonStyle}
+                >
+                  Show All Jobs
+                </button>
+              )}
+            </div>
 
             <div style={{ overflowX: "auto" }}>
               <table style={tableStyle}>
@@ -1125,13 +1159,19 @@ ${accessLink}`);
                 </thead>
 
                 <tbody>
-                  {filteredJobs.map((job) => (
+                  {visibleJobs.map((job) => (
                     <tr
                       key={job.job_number}
-                      onClick={() => setSelectedJobNumber(job.job_number)}
+                      onClick={() => selectJobFromList(job.job_number)}
                       style={{
                         cursor: "pointer",
-                        background: job.job_number === selectedJobNumber ? "#fff7cc" : "#ffffff",
+                        background:
+                        flashJobNumber === job.job_number
+                          ? "#d9f2dd"
+                          : job.job_number === selectedJobNumber
+                          ? "#fff7cc"
+                          : "#ffffff",
+                        transition: "background 180ms ease",
                       }}
                     >
                       <TableCell>{job.job_number}</TableCell>
@@ -1226,8 +1266,8 @@ ${accessLink}`);
                   value={`${selectedJobDetail.city || ""}, ${selectedJobDetail.state || ""} ${selectedJobDetail.postal_code || ""}`}
                 />
                 <Detail label="Current Stage" value={formatDisplayLabel(selectedJobDetail.current_stage)} />
-                <Detail label="Gate" value={renderGateBadge(selectedJobDetail.gate_status, selectedJobDetail.gate_message)} />
-                <Detail label="Next Action" value={selectedJobDetail.next_action} />
+                <DetailWide label="Gate" value={renderGateBadge(selectedJobDetail.gate_status, selectedJobDetail.gate_message)} />
+                <DetailWide label="Next Action" value={selectedJobDetail.next_action} />
                 <Detail label="Membership" value={formatDisplayLabel(selectedJobDetail.membership_status)} />
                 <Detail label="Site Fee" value={formatDisplayLabel(selectedJobDetail.site_fee_status)} />
                 <Detail label="Site Visit" value={formatDateTime(selectedJobDetail.site_visit_at)} />
@@ -1698,6 +1738,15 @@ function Detail({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+function DetailWide({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div style={{ gridColumn: "1 / -1" }}>
+      <div style={{ fontSize: "12px", color: "#555", fontWeight: 700 }}>{label}</div>
+      <div style={{ whiteSpace: "normal", overflowWrap: "anywhere" }}>{value || "-"}</div>
+    </div>
+  );
+}
+
 function DashboardCard({ title, value }: { title: string; value: number | string }) {
   return (
     <div style={dashboardCardStyle}>
@@ -1758,6 +1807,14 @@ const labelStyle: React.CSSProperties = { display: "block", marginTop: "12px", c
 const inputStyle: React.CSSProperties = { display: "block", width: "100%", padding: "8px", marginTop: "4px", background: "#ffffff", color: "#111111", border: "1px solid #d8c8a3", borderRadius: "10px" };
 const buttonStyle: React.CSSProperties = { marginTop: "16px", padding: "10px 16px", cursor: "pointer", background: "#1f4d3a", color: "#ffffff", border: "1px solid #143528", borderRadius: "999px" };
 const secondaryButtonStyle: React.CSSProperties = { marginTop: "16px", padding: "10px 16px", cursor: "pointer", background: "#fffaf0", color: "#143528", border: "1px solid #c89b3c", borderRadius: "999px" };
+const jobListHeaderRowStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: "12px",
+  flexWrap: "wrap",
+};
+
 const buttonRowStyle: React.CSSProperties = { display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "16px" };
 const detailCardStyle: React.CSSProperties = { marginTop: "16px", padding: "16px", border: "1px solid #d8c8a3", background: "#fffdf7", color: "#111111", borderRadius: "14px" };
 const detailGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" };
@@ -1769,5 +1826,5 @@ const fileGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumn
 const fileCardStyle: React.CSSProperties = { border: "1px solid #d8c8a3", padding: "10px", background: "#fffdf7", color: "#111111", borderRadius: "12px" };
 const thumbnailStyle: React.CSSProperties = { width: "100%", height: "140px", objectFit: "cover", border: "1px solid #ccc", marginBottom: "8px", background: "#ffffff", borderRadius: "10px" };
 const filePlaceholderStyle: React.CSSProperties = { height: "140px", border: "1px solid #ccc", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", background: "#ffffff", textAlign: "center", padding: "8px", color: "#111111", borderRadius: "10px" };
-const gateBadgeStyle: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: "8px", padding: "4px 10px", borderRadius: "999px", background: "#fffdf7", border: "1px solid #d8c8a3", whiteSpace: "nowrap" };
+const gateBadgeStyle: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: "8px", padding: "4px 10px", borderRadius: "999px", background: "#fffdf7", border: "1px solid #d8c8a3", whiteSpace: "normal" };
 const tableStyle: React.CSSProperties = { width: "100%", borderCollapse: "collapse", marginTop: "12px", background: "#ffffff", color: "#111111" };
