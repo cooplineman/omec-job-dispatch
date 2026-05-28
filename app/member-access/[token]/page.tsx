@@ -279,15 +279,12 @@ export default function MemberAccessPage({
       </aside>
 
       <section style={contentStyle}>
-        <div style={secureBadgeStyle}>▣ Secure Member Access</div>
-
         <header id="overview" style={heroStyle}>
           <div>
             <p style={welcomeStyle}>Welcome,</p>
             <h1 style={titleStyle}>{getFirstName(selectedJob.applicant_name)}&apos;s Service Request</h1>
             <p style={subtitleStyle}>Here is the latest update on your project.</p>
           </div>
-          <div style={heroArtStyle} />
         </header>
 
         {jobs.length > 1 && (
@@ -310,14 +307,14 @@ export default function MemberAccessPage({
         )}
 
         <section style={infoStripStyle}>
-          <InfoTile icon="▣" label="Job Number" value={selectedJob.job_number} />
+          <InfoTile icon={<FileDigitIcon />} label="Job Number" value={selectedJob.job_number} />
           <InfoTile
-            icon="⌖"
+            icon={<MapPinHouseIcon />}
             label="Location"
             value={`${selectedJob.service_address_line1}${selectedJob.city ? `, ${selectedJob.city}` : ""}`}
           />
-          <InfoTile icon="▣" label="Submitted" value={formatShortDate(selectedJob.created_at)} />
-          <InfoTile icon="◎" label="Member" value={selectedJob.applicant_name} />
+          <InfoTile icon={<PencilLineIcon />} label="Submitted" value={formatShortDate(selectedJob.created_at)} />
+          <InfoTile icon={<UserIcon />} label="Member" value={selectedJob.applicant_name} />
         </section>
 
         <section style={cardStyle}>
@@ -596,6 +593,45 @@ function CloudUploadIcon() {
   );
 }
 
+function FileDigitIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14 2v6h6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10 13h1.5a1.5 1.5 0 0 1 0 3H10v-6h2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M15 10v6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function MapPinHouseIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8.5 11.5 12 8.5l3.5 3" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9.5 11v4h5v-4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function PencilLineIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 20h9" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M20 21a8 8 0 0 0-16 0" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2.2" />
+    </svg>
+  );
+}
+
 function BrandBlock() {
   return (
     <div style={brandBlockStyle}>
@@ -610,7 +646,7 @@ function BrandBlock() {
   );
 }
 
-function InfoTile({ icon, label, value }: { icon: string; label: string; value: string }) {
+function InfoTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div style={infoTileStyle}>
       <span style={infoIconStyle}>{icon}</span>
@@ -1122,29 +1158,16 @@ const sideHelpButtonStyle: React.CSSProperties = {
   background: "rgba(0, 45, 27, 0.28)",
 };
 
-const secureBadgeStyle: React.CSSProperties = {
-  float: "right",
-  color: "#0b6c32",
-  fontWeight: 800,
-  fontSize: "14px",
-};
 
 const heroStyle: React.CSSProperties = {
   minHeight: "150px",
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
+  justifyContent: "flex-start",
   gap: "20px",
   marginBottom: "22px",
 };
 
-const heroArtStyle: React.CSSProperties = {
-  flex: "0 0 280px",
-  height: "130px",
-  borderRadius: "22px",
-  background:
-    "linear-gradient(135deg, rgba(33,132,59,0.12), rgba(33,132,59,0.02)), radial-gradient(circle at 80% 20%, rgba(33,132,59,0.26), transparent 36%)",
-};
 
 const welcomeStyle: React.CSSProperties = {
   color: "#176b36",
@@ -1191,14 +1214,15 @@ const infoTileStyle: React.CSSProperties = {
 };
 
 const infoIconStyle: React.CSSProperties = {
-  width: "48px",
-  height: "48px",
+  width: "58px",
+  height: "58px",
   borderRadius: "999px",
   background: "#edf6ef",
   display: "grid",
   placeItems: "center",
-  color: "#176b36",
+  color: "#21843b",
   fontWeight: 800,
+  flex: "0 0 auto",
 };
 
 const infoLabelStyle: React.CSSProperties = {
