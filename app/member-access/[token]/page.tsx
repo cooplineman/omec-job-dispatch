@@ -594,7 +594,7 @@ function buildMemberTimeline(job: MemberJob | null): TimelineStep[] {
         publicStatus === "Estimate In Progress"
           ? "current"
           : estimateNotRequired
-          ? "not_required"
+          ? "complete"
           : estimateSentOrBeyond
           ? "complete"
           : "pending",
@@ -616,7 +616,7 @@ function buildMemberTimeline(job: MemberJob | null): TimelineStep[] {
         publicStatus === "Estimate In Progress"
           ? "pending"
           : depositNotRequired
-          ? "not_required"
+          ? "complete"
           : Number(job.deposit_received ?? 0) >= Number(job.deposit_required ?? 0)
           ? "complete"
           : publicStatus === "Awaiting Deposit"
