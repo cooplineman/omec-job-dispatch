@@ -1034,13 +1034,16 @@ function getTrackCircleStyle(status: TimelineStep["status"]): React.CSSPropertie
   return { ...base, background: "#f2f3f2", color: "#58635b", border: "1px solid #d8ddda" };
 }
 
+const appFontFamily =
+  'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif';
+
 const shellStyle: React.CSSProperties = {
   minHeight: "100vh",
   display: "grid",
   gridTemplateColumns: "280px minmax(0, 1fr)",
   background: "#f6f8f5",
   color: "#071f14",
-  fontFamily: "Arial, sans-serif",
+  fontFamily: appFontFamily,
 };
 
 const sidebarStyle: React.CSSProperties = {
@@ -1171,23 +1174,28 @@ const heroStyle: React.CSSProperties = {
 
 const welcomeStyle: React.CSSProperties = {
   color: "#176b36",
+  fontFamily: appFontFamily,
   fontWeight: 800,
   fontSize: "22px",
   margin: 0,
 };
 
 const titleStyle: React.CSSProperties = {
+  fontFamily: appFontFamily,
   fontSize: "46px",
-  lineHeight: 1,
+  lineHeight: 1.04,
   margin: "8px 0 12px",
-  letterSpacing: "-1px",
+  letterSpacing: "-1.2px",
   color: "#072719",
+  fontWeight: 850,
 };
 
 const subtitleStyle: React.CSSProperties = {
+  fontFamily: appFontFamily,
   fontSize: "18px",
   margin: 0,
   color: "#4d5a53",
+  fontWeight: 500,
 };
 
 const cardStyle: React.CSSProperties = {
@@ -1232,6 +1240,7 @@ const infoLabelStyle: React.CSSProperties = {
 };
 
 const infoValueStyle: React.CSSProperties = {
+  fontFamily: appFontFamily,
   fontWeight: 800,
   color: "#071f14",
 };
@@ -1245,9 +1254,11 @@ const sectionHeaderStyle: React.CSSProperties = {
 };
 
 const sectionTitleStyle: React.CSSProperties = {
+  fontFamily: appFontFamily,
   fontSize: "22px",
   margin: "0 0 12px",
   color: "#071f14",
+  fontWeight: 800,
 };
 
 const updatedBadgeStyle: React.CSSProperties = {
@@ -1334,9 +1345,11 @@ const metricLabelStyle: React.CSSProperties = {
 };
 
 const metricValueStyle: React.CSSProperties = {
+  fontFamily: appFontFamily,
   fontSize: "28px",
-  fontWeight: 900,
+  fontWeight: 850,
   margin: "4px 0",
+  letterSpacing: "-0.4px",
 };
 
 const documentFilterStyle: React.CSSProperties = {
