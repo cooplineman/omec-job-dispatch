@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { Home, Folder, CloudUpload } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -248,33 +249,15 @@ export default function MemberAccessPage({
 
         <nav style={navStyle}>
           <a href="#overview" style={{ ...navItemStyle, ...activeNavStyle }}>
-            <Image
-              src="/home_icon.png"
-              alt=""
-              width={28}
-              height={28}
-              style={navIconImageStyle}
-            />
+            <Home size={24} strokeWidth={2.5} />
             Overview
           </a>
           <a href="#documents" style={navItemStyle}>
-            <Image
-              src="/file_icon.png"
-              alt=""
-              width={28}
-              height={28}
-              style={navIconImageStyle}
-            />
+            <Folder size={24} strokeWidth={2.5} />
             Documents
           </a>
           <a href="#uploads" style={navItemStyle}>
-            <Image
-              src="/upload_icon.png"
-              alt=""
-              width={28}
-              height={28}
-              style={navIconImageStyle}
-            />
+            <CloudUpload size={24} strokeWidth={2.5} />
             Uploads
           </a>
         </nav>
@@ -815,12 +798,6 @@ const navIconStyle: React.CSSProperties = {
   lineHeight: 1,
 };
 
-const navIconImageStyle: React.CSSProperties = {
-  width: "28px",
-  height: "28px",
-  objectFit: "contain",
-  filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.24))",
-};
 
 const sideHelpCardStyle: React.CSSProperties = {
   marginTop: "42px",
