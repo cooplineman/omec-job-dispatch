@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { Home, Folder, CloudUpload } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -249,15 +248,15 @@ export default function MemberAccessPage({
 
         <nav style={navStyle}>
           <a href="#overview" style={{ ...navItemStyle, ...activeNavStyle }}>
-            <Home size={24} strokeWidth={2.5} />
+            <HomeIcon />
             Overview
           </a>
           <a href="#documents" style={navItemStyle}>
-            <Folder size={24} strokeWidth={2.5} />
+            <FolderIcon />
             Documents
           </a>
           <a href="#uploads" style={navItemStyle}>
-            <CloudUpload size={24} strokeWidth={2.5} />
+            <CloudUploadIcon />
             Uploads
           </a>
         </nav>
@@ -482,6 +481,35 @@ export default function MemberAccessPage({
         <footer style={pageFooterStyle}>Secure • Private • Trusted</footer>
       </section>
     </main>
+  );
+}
+
+function HomeIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 10.8L12 3l9 7.8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5.5 10.5V20h13v-9.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9.5 20v-6h5v6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function FolderIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3.5 6.5h6l2 2h9v9.5a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3 10h18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CloudUploadIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M7.5 18.5H7a4 4 0 0 1-.6-7.95A5.8 5.8 0 0 1 17.6 8.9A4.8 4.8 0 0 1 18 18.5h-1.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 19V12" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M8.8 15.2L12 12l3.2 3.2" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
