@@ -24,6 +24,8 @@ type MemberJob = {
   estimate_amount: number | null;
   deposit_required: number | null;
   deposit_received: number | null;
+  final_bill_amount: number | null;
+  final_payment_received: boolean | null;
   energized_at: string | null;
   created_at: string;
   updated_at: string;
@@ -364,6 +366,17 @@ export default function MemberAccessPage({
               <div style={metricLabelStyle}>Deposit</div>
               <div style={metricValueStyle}>{formatDeposit(selectedJob)}</div>
               <div style={mutedStyle}>Deposit Status</div>
+            </div>
+          </div>
+
+          <div style={metricCardStyle}>
+            <div style={metricIconStyle}>
+              <CircleDollarSignIcon />
+            </div>
+            <div>
+              <div style={metricLabelStyle}>Final Payment / Refund</div>
+              <div style={metricValueStyle}>{formatFinalPaymentRefund(selectedJob)}</div>
+              <div style={mutedStyle}>{getFinalPaymentRefundMessage(selectedJob)}</div>
             </div>
           </div>
         </section>
@@ -832,6 +845,44 @@ function formatDeposit(job: MemberJob) {
   return `$${Number(job.deposit_received ?? 0).toFixed(2)} / $${Number(
     job.deposit_required ?? 0
   ).toFixed(2)}`;
+}
+
+function formatFinalPaymentRefund(job: MemberJob) {
+  if (!job.final_payment_received) {
+    return "Pending";
+  }
+
+  const finalAmount = Number(job.final_bill_amount ?? 0);
+  const estimateAmount = Number(job.estimate_amount ?? 0);
+
+  if (estimateAmount > 0 && finalAmount < estimateAmount) {
+    return `$${Math.max(estimateAmount - finalAmount, 0).toFixed(2)} Refund`;
+  }
+
+  if (finalAmount > 0) {
+    return `$${finalAmount.toFixed(2)}`;
+  }
+
+  return "Complete";
+}
+
+function getFinalPaymentRefundMessage(job: MemberJob) {
+  if (!job.final_payment_received) {
+    return "Final billing pending";
+  }
+
+  const finalAmount = Number(job.final_bill_amount ?? 0);
+  const estimateAmount = Number(job.estimate_amount ?? 0);
+
+  if (estimateAmount > 0 && finalAmount < estimateAmount) {
+    return "Great news! Your job came in under estimate.";
+  }
+
+  if (estimateAmount > 0 && finalAmount > estimateAmount) {
+    return "Final amount is above estimate. Please contact OMEC with questions.";
+  }
+
+  return "Final payment complete";
 }
 
 function formatShortDate(value: string | null) {
