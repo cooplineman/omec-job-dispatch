@@ -19,12 +19,11 @@ type MemberJob = {
   state: string | null;
   postal_code: string | null;
   public_status: string;
+  estimate_status: string | null;
   site_visit_at: string | null;
   estimate_amount: number | null;
   deposit_required: number | null;
   deposit_received: number | null;
-  final_bill_amount?: number | null;
-  final_payment_received?: boolean | null;
   energized_at: string | null;
   created_at: string;
   updated_at: string;
@@ -36,6 +35,15 @@ type TimelineStep = {
   detail?: string;
 };
 
+type JobDocument = {
+  id: string;
+  job_number: string;
+  document_type: string;
+  file_name: string;
+  storage_path: string;
+  created_at: string;
+};
+
 export default function MemberAccessPage({
   params,
 }: {
@@ -43,8 +51,14 @@ export default function MemberAccessPage({
 }) {
   const [jobs, setJobs] = useState<MemberJob[]>([]);
   const [selectedJobNumber, setSelectedJobNumber] = useState("");
+  const [documents, setDocuments] = useState<JobDocument[]>([]);
+  const [signedFileUrls, setSignedFileUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+
+  const [uploading, setUploading] = useState(false);
+  const [memberDocumentType, setMemberDocumentType] = useState("site_photo");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const selectedJob = useMemo(
     () => jobs.find((job) => job.job_number === selectedJobNumber) || jobs[0],
@@ -54,6 +68,14 @@ export default function MemberAccessPage({
   const timeline = useMemo(
     () => buildMemberTimeline(selectedJob || null),
     [selectedJob]
+  );
+
+  const selectedDocuments = useMemo(
+    () =>
+      selectedJob
+        ? documents.filter((document) => document.job_number === selectedJob.job_number)
+        : [],
+    [documents, selectedJob]
   );
 
   useEffect(() => {
@@ -69,12 +91,15 @@ export default function MemberAccessPage({
       if (error) {
         setMessage(`Unable to load access link: ${error.message}`);
         setJobs([]);
+        setDocuments([]);
+        setSignedFileUrls({});
       } else {
         const loadedJobs = (data || []) as MemberJob[];
         setJobs(loadedJobs);
 
         if (loadedJobs.length > 0) {
           setSelectedJobNumber(loadedJobs[0].job_number);
+          await loadDocuments(params.token);
         }
       }
 
@@ -84,162 +109,502 @@ export default function MemberAccessPage({
     loadAccess();
   }, [params.token]);
 
+  async function loadDocuments(token: string) {
+    const { data, error } = await supabase.rpc(
+      "get_member_documents_by_access_token",
+      { p_token: token }
+    );
+
+    if (error) {
+      setMessage(`Unable to load member documents: ${error.message}`);
+      setDocuments([]);
+      setSignedFileUrls({});
+      return;
+    }
+
+    const loadedDocuments = (data || []) as JobDocument[];
+    setDocuments(loadedDocuments);
+
+    if (loadedDocuments.length === 0) {
+      setSignedFileUrls({});
+      return;
+    }
+
+    const paths = loadedDocuments.map((document) => document.storage_path);
+
+    const { data: signedData, error: signedError } = await supabase.storage
+      .from("job-documents")
+      .createSignedUrls(paths, 60 * 60);
+
+    if (signedError) {
+      setMessage(`Unable to prepare document links: ${signedError.message}`);
+      setSignedFileUrls({});
+      return;
+    }
+
+    const urlMap: Record<string, string> = {};
+
+    signedData?.forEach((signedFile, index) => {
+      if (signedFile.signedUrl) {
+        urlMap[paths[index]] = signedFile.signedUrl;
+      }
+    });
+
+    setSignedFileUrls(urlMap);
+  }
+
+  async function uploadMemberDocument(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedJob || !selectedFile) {
+      setMessage("Choose a file first.");
+      return;
+    }
+
+    setUploading(true);
+    setMessage("");
+
+    const safeFileName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const storagePath = `${selectedJob.job_number}/member-${Date.now()}-${safeFileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("job-documents")
+      .upload(storagePath, selectedFile);
+
+    if (uploadError) {
+      setMessage(`Upload failed: ${uploadError.message}`);
+      setUploading(false);
+      return;
+    }
+
+    const { error } = await supabase.rpc("add_member_document_by_access_token", {
+      p_token: params.token,
+      p_job_number: selectedJob.job_number,
+      p_document_type: memberDocumentType,
+      p_file_name: selectedFile.name,
+      p_storage_path: storagePath,
+    });
+
+    if (error) {
+      setMessage(`Upload saved but record failed: ${error.message}`);
+    } else {
+      setSelectedFile(null);
+      setMessage("Upload received. Thank you.");
+      await loadDocuments(params.token);
+    }
+
+    setUploading(false);
+  }
+
   if (loading) {
     return (
-      <main style={mainStyle}>
-        <Header />
-        <section style={sectionStyle}>
-          <p>Loading your service request...</p>
+      <main style={shellStyle}>
+        <div style={loadingCardStyle}>Loading your service request...</div>
+      </main>
+    );
+  }
+
+  if (message && jobs.length === 0) {
+    return (
+      <main style={shellStyle}>
+        <aside style={sidebarStyle}>
+          <BrandBlock />
+        </aside>
+        <section style={contentStyle}>
+          <div style={cardStyle}>
+            <h1 style={titleStyle}>Access Link Unavailable</h1>
+            <p style={mutedStyle}>
+              This service request link is expired, invalid, or no longer active.
+              Please contact OMEC if you need a new link.
+            </p>
+            <p style={alertStyle}>{message}</p>
+          </div>
         </section>
       </main>
     );
   }
 
-  if (message || jobs.length === 0) {
+  if (!selectedJob) {
     return (
-      <main style={mainStyle}>
-        <Header />
-        <section style={sectionStyle}>
-          <h2>Access Link Unavailable</h2>
-          <p style={emptyStateStyle}>
-            This service request link is expired, invalid, or no longer active.
-            Please contact OMEC if you need a new link.
-          </p>
-          {message && <p style={messageStyle}>{message}</p>}
+      <main style={shellStyle}>
+        <aside style={sidebarStyle}>
+          <BrandBlock />
+        </aside>
+        <section style={contentStyle}>
+          <div style={cardStyle}>
+            <h1 style={titleStyle}>No Service Request Found</h1>
+            <p style={mutedStyle}>
+              No service request is currently available for this access link.
+            </p>
+          </div>
         </section>
       </main>
     );
   }
 
   return (
-    <main style={mainStyle}>
-      <Header />
+    <main style={shellStyle}>
+      <aside style={sidebarStyle}>
+        <BrandBlock />
 
-      <section style={sectionStyle}>
-        <h2>My Service Request</h2>
+        <nav style={navStyle}>
+          <a href="#overview" style={{ ...navItemStyle, ...activeNavStyle }}>
+            <HomeIcon />
+            Overview
+          </a>
+          <a href="#documents" style={navItemStyle}>
+            <FolderIcon />
+            Documents
+          </a>
+          <a href="#uploads" style={navItemStyle}>
+            <CloudUploadIcon />
+            Uploads
+          </a>
+        </nav>
+
+        <div style={sideHelpCardStyle}>
+          <div style={sideHelpIconStyle}>☏</div>
+          <h3 style={sideHelpTitleStyle}>Need Help?</h3>
+          <p style={sideHelpTextStyle}>
+            Our team is here to help.<br />
+            Please reach out with<br />
+            any questions.
+          </p>
+          <a href="mailto:office@oneidamadison.com" style={sideHelpButtonStyle}>
+            Contact Us
+          </a>
+        </div>
+</aside>
+
+      <section style={contentStyle}>
+        <div style={secureBadgeStyle}>▣ Secure Member Access</div>
+
+        <header id="overview" style={heroStyle}>
+          <div>
+            <p style={welcomeStyle}>Welcome,</p>
+            <h1 style={titleStyle}>{getFirstName(selectedJob.applicant_name)}&apos;s Service Request</h1>
+            <p style={subtitleStyle}>Here is the latest update on your project.</p>
+          </div>
+          <div style={heroArtStyle} />
+        </header>
 
         {jobs.length > 1 && (
-          <label style={labelStyle}>
-            Select Job
-            <select
-              value={selectedJob?.job_number || ""}
-              onChange={(event) => setSelectedJobNumber(event.target.value)}
-              style={inputStyle}
-            >
-              {jobs.map((job) => (
-                <option key={job.job_number} value={job.job_number}>
-                  {job.job_number} — {job.service_address_line1}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div style={cardStyle}>
+            <label style={labelStyle}>
+              Select Service Request
+              <select
+                value={selectedJob.job_number}
+                onChange={(event) => setSelectedJobNumber(event.target.value)}
+                style={inputStyle}
+              >
+                {jobs.map((job) => (
+                  <option key={job.job_number} value={job.job_number}>
+                    {job.job_number} — {job.service_address_line1}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         )}
 
-        {selectedJob && (
-          <>
-            <div style={statusCardStyle}>
-              <div style={statusLabelStyle}>Current Status</div>
-              <div style={statusTextStyle}>
-                {formatPublicStatus(selectedJob.public_status)}
-              </div>
-              <div style={mutedStyle}>
-                Last updated {formatDateTime(selectedJob.updated_at)}
-              </div>
-            </div>
+        <section style={infoStripStyle}>
+          <InfoTile icon="▣" label="Job Number" value={selectedJob.job_number} />
+          <InfoTile
+            icon="⌖"
+            label="Location"
+            value={`${selectedJob.service_address_line1}${selectedJob.city ? `, ${selectedJob.city}` : ""}`}
+          />
+          <InfoTile icon="▣" label="Submitted" value={formatShortDate(selectedJob.created_at)} />
+          <InfoTile icon="◎" label="Member" value={selectedJob.applicant_name} />
+        </section>
 
-            <div style={detailGridStyle}>
-              <Detail label="Job Number" value={selectedJob.job_number} />
-              <Detail label="Name" value={selectedJob.applicant_name} />
-              <Detail label="Member #" value={selectedJob.member_number} />
-              <Detail
-                label="Service Address"
-                value={`${selectedJob.service_address_line1}, ${
-                  selectedJob.city || ""
-                }, ${selectedJob.state || ""} ${
-                  selectedJob.postal_code || ""
-                }`}
-              />
-              <Detail
-                label="Site Visit"
-                value={formatDateTime(selectedJob.site_visit_at)}
-              />
-              <Detail
-                label="Estimate"
-                value={formatEstimate(selectedJob)}
-              />
-              <Detail
-                label="Deposit"
-                value={formatDeposit(selectedJob)}
-              />
-              <Detail
-                label="Final Payment / Refund"
-                value={formatFinalPaymentRefund(selectedJob)}
-              />
-              <Detail
-                label="Final Payment Status"
-                value={getFinalPaymentRefundMessage(selectedJob)}
-              />
-              <Detail
-                label="Service Energized"
-                value={formatDateTime(selectedJob.energized_at)}
-              />
-            </div>
-          </>
-        )}
-      </section>
+        <section style={cardStyle}>
+          <div style={sectionHeaderStyle}>
+            <h2 style={sectionTitleStyle}>Project Status</h2>
+            <span style={updatedBadgeStyle}>Updated {formatShortDate(selectedJob.updated_at)}</span>
+          </div>
 
-      {selectedJob && (
-        <>
-          <section style={sectionStyle}>
-            <h2>Progress Timeline</h2>
-
-            <div style={timelineStyle}>
-              {timeline.map((step) => (
-                <div key={step.label} style={timelineRowStyle}>
-                  <div style={timelineIconStyle}>
-                    {getStepIcon(step.status)}
-                  </div>
-
-                  <div>
-                    <div style={timelineLabelStyle}>{step.label}</div>
-                    {step.detail && (
-                      <div style={mutedStyle}>{step.detail}</div>
-                    )}
-                  </div>
+          <div style={statusTrackStyle}>
+            {timeline.map((step, index) => (
+              <div key={step.label} style={trackStepStyle}>
+                {index < timeline.length - 1 && <div style={trackLineStyle} />}
+                <div style={getTrackCircleStyle(step.status)}>
+                  {getTrackSymbol(step.status, step.label)}
                 </div>
-              ))}
-            </div>
-          </section>
+                <div style={trackLabelStyle}>{step.label}</div>
+                <div style={trackDetailStyle}>{step.detail || getStatusWord(step.status)}</div>
+              </div>
+            ))}
+          </div>
 
-          <section style={sectionStyle}>
-            <h2>Need Help?</h2>
-            <p>
-              If you have questions about your service request, please contact
-              OMEC and reference job number{" "}
+          <div style={statusMessageStyle}>
+            <strong>{formatPublicStatus(selectedJob.public_status)}</strong>
+            <br />
+            {getFriendlyStatusMessage(selectedJob)}
+          </div>
+        </section>
+
+        <section style={twoColumnStyle}>
+          <div style={metricCardStyle}>
+            <div style={metricIconStyle}>
+              <ReceiptIcon />
+            </div>
+            <div>
+              <div style={metricLabelStyle}>Estimate</div>
+              <div style={metricValueStyle}>{formatEstimate(selectedJob)}</div>
+              <div style={mutedStyle}>Estimated Total</div>
+            </div>
+          </div>
+
+          <div style={metricCardStyle}>
+            <div style={metricIconStyle}>
+              <CircleDollarSignIcon />
+            </div>
+            <div>
+              <div style={metricLabelStyle}>Deposit</div>
+              <div style={metricValueStyle}>{formatDeposit(selectedJob)}</div>
+              <div style={mutedStyle}>Deposit Status</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="documents" style={cardStyle}>
+          <div style={sectionHeaderStyle}>
+            <h2 style={sectionTitleStyle}>Documents</h2>
+            <span style={updatedBadgeStyle}>{selectedDocuments.length} file(s)</span>
+          </div>
+
+          <div style={documentFilterStyle}>
+            <span style={filterPillActiveStyle}>All</span>
+            <span style={filterPillStyle}>Site Photos</span>
+            <span style={filterPillStyle}>Construction Photos</span>
+            <span style={filterPillStyle}>Inspection Docs</span>
+            <span style={filterPillStyle}>Estimates</span>
+          </div>
+
+          {selectedDocuments.length === 0 ? (
+            <p style={emptyStateStyle}>
+              No public documents are available for this service request yet.
+            </p>
+          ) : (
+            <div style={documentGridStyle}>
+              {selectedDocuments.map((document) => {
+                const fileUrl = signedFileUrls[document.storage_path];
+
+                return (
+                  <article key={document.id} style={documentCardStyle}>
+                    <a
+                      href={fileUrl || "#"}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={documentPreviewLinkStyle}
+                    >
+                      {isImageDocument(document.file_name) && fileUrl ? (
+                        <img
+                          src={fileUrl}
+                          alt={document.file_name}
+                          style={thumbnailStyle}
+                        />
+                      ) : (
+                        <div style={pdfTileStyle}>PDF</div>
+                      )}
+                    </a>
+
+                    <div style={documentMetaStyle}>
+                      <div style={documentDateStyle}>{formatShortDate(document.created_at)}</div>
+                      <div style={documentNameStyle}>{formatDocumentType(document.document_type)}</div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section id="uploads" style={cardStyle}>
+          <h2 style={sectionTitleStyle}>Upload a Photo or Document</h2>
+          <p style={mutedStyle}>
+            Share site/construction photos or inspection documents with OMEC.
+          </p>
+
+          <form onSubmit={uploadMemberDocument} style={uploadGridStyle}>
+            <label style={uploadOptionStyle}>
+              <span style={uploadIconStyle}>▧</span>
+              <span>
+                <strong>Upload Type</strong>
+                <select
+                  value={memberDocumentType}
+                  onChange={(event) => setMemberDocumentType(event.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="site_photo">Site Photo</option>
+                  <option value="construction_photo">Construction Photo</option>
+                  <option value="inspection">Inspection</option>
+                </select>
+              </span>
+            </label>
+
+            <label style={uploadOptionStyle}>
+              <span style={uploadIconStyle}>⇧</span>
+              <span>
+                <strong>Choose File</strong>
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
+                  style={fileInputStyle}
+                />
+                <span style={mutedStyle}>
+                  {selectedFile ? selectedFile.name : "JPG, PNG, or PDF"}
+                </span>
+              </span>
+            </label>
+
+            <button type="submit" disabled={uploading} style={primaryButtonStyle}>
+              {uploading ? "Uploading..." : "Upload File"}
+            </button>
+          </form>
+
+          {message && <p style={alertStyle}>{message}</p>}
+        </section>
+
+        <section id="help" style={supportCardStyle}>
+          <div>
+            <h2 style={{ ...sectionTitleStyle, margin: 0 }}>
+              Questions about your project?
+            </h2>
+            <p style={{ ...mutedStyle, marginBottom: 0 }}>
+              Our team is here to help. Please contact OMEC and reference job{" "}
               <strong>{selectedJob.job_number}</strong>.
             </p>
-          </section>
-        </>
-      )}
+          </div>
+          <a href="mailto:office@oneidamadison.com" style={contactButtonStyle}>
+            Contact Us
+          </a>
+        </section>
+
+        <footer style={pageFooterStyle}>Secure • Private • Trusted</footer>
+      </section>
     </main>
   );
 }
 
-function Header() {
+function getFirstName(name: string | null | undefined) {
+  const cleaned = (name || "").trim();
+
+  if (!cleaned) {
+    return "Your";
+  }
+
+  return cleaned.split(/\s+/)[0];
+}
+
+function HourglassIcon() {
   return (
-    <div style={brandHeaderStyle}>
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 3h12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M6 21h12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M7 3c0 4.2 2.4 6.1 5 9-2.6 2.9-5 4.8-5 9" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M17 3c0 4.2-2.4 6.1-5 9 2.6 2.9 5 4.8 5 9" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 7h6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M9 17h6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function HardHatIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 18h18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M5 18v-2a7 7 0 0 1 14 0v2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 9v5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M15 9v5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M8 18v2h8v-2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function BookmarkCheckIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 4.8A2.8 2.8 0 0 1 8.8 2h6.4A2.8 2.8 0 0 1 18 4.8V21l-6-3-6 3V4.8Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 10.5l2 2 4-4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ReceiptIcon() {
+  return (
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 3h12v18l-2-1.2-2 1.2-2-1.2-2 1.2-2-1.2L6 21V3Z" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 7h6" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M9 11h6" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M9 15h4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CircleDollarSignIcon() {
+  return (
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.1" />
+      <path d="M12 6.5v11" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M15 8.8c-.7-.7-1.7-1-3-1-1.6 0-2.8.8-2.8 2.1 0 1.4 1.2 1.9 2.8 2.2 1.9.4 3 .9 3 2.3 0 1.3-1.2 2.1-3 2.1-1.4 0-2.6-.4-3.4-1.2" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function HomeIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 10.8L12 3l9 7.8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5.5 10.5V20h13v-9.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9.5 20v-6h5v6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function FolderIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3.5 6.5h6l2 2h9v9.5a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3 10h18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CloudUploadIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M7.5 18.5H7a4 4 0 0 1-.6-7.95A5.8 5.8 0 0 1 17.6 8.9A4.8 4.8 0 0 1 18 18.5h-1.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 19V12" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M8.8 15.2L12 12l3.2 3.2" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function BrandBlock() {
+  return (
+    <div style={brandBlockStyle}>
       <Image
         src="/omec-logo.png"
         alt="OMEC logo"
-        width={84}
-        height={84}
-        style={logoStyle}
+        width={210}
+        height={210}
+        style={brandLogoStyle}
       />
+    </div>
+  );
+}
 
-      <div>
-        <h1 style={{ marginBottom: "4px" }}>OMEC Connect</h1>
-        <p style={{ marginTop: 0 }}>Member Service Portal</p>
-      </div>
+function InfoTile({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <div style={infoTileStyle}>
+      <span style={infoIconStyle}>{icon}</span>
+      <span>
+        <div style={infoLabelStyle}>{label}</div>
+        <div style={infoValueStyle}>{value}</div>
+      </span>
     </div>
   );
 }
@@ -250,12 +615,7 @@ function buildMemberTimeline(job: MemberJob | null): TimelineStep[] {
   const publicStatus = formatPublicStatus(job.public_status);
   const estimateNotRequired = Number(job.estimate_amount ?? -1) === 0;
   const depositNotRequired = Number(job.deposit_required ?? -1) === 0;
-
-  const membershipComplete = ![
-    "Application Received",
-    "Membership Needed",
-  ].includes(publicStatus);
-
+  const membershipComplete = !["Application Received", "Membership Needed"].includes(publicStatus);
   const siteVisitComplete = Boolean(job.site_visit_at);
 
   const estimateSentOrBeyond = [
@@ -276,88 +636,50 @@ function buildMemberTimeline(job: MemberJob | null): TimelineStep[] {
     "Construction In Progress",
   ].includes(publicStatus);
 
-  const constructionComplete = [
-    "Inspection Pending",
-    "Final Billing",
-    "Service Energized",
-  ].includes(publicStatus);
-
-  const inspectionReached = [
-    "Inspection Pending",
-    "Final Billing",
-    "Service Energized",
-  ].includes(publicStatus);
-
+  const constructionComplete = ["Inspection Pending", "Final Billing", "Service Energized"].includes(publicStatus);
+  const inspectionReached = ["Inspection Pending", "Final Billing", "Service Energized"].includes(publicStatus);
   const serviceEnergized = publicStatus === "Service Energized";
 
   return [
-    { label: "Application Received", status: "complete" },
+    { label: "Received", status: "complete", detail: formatShortDate(job.created_at) },
     {
-      label: "Membership Complete",
+      label: "Membership",
       status: membershipComplete ? "complete" : "current",
+      detail: membershipComplete ? "Complete" : "In progress",
     },
     {
       label: "Site Visit",
-      status: siteVisitComplete
-        ? "complete"
-        : publicStatus === "Site Visit Scheduling"
-        ? "current"
-        : "pending",
-      detail: siteVisitComplete
-        ? formatDateTime(job.site_visit_at)
-        : "To be scheduled",
+      status: siteVisitComplete ? "complete" : publicStatus === "Site Visit Scheduling" ? "current" : "pending",
+      detail: siteVisitComplete ? formatShortDate(job.site_visit_at) : "Pending",
     },
     {
-      label: estimateNotRequired ? "Estimate Not Required" : "Estimate Sent",
-      status: estimateNotRequired
-        ? "not_required"
-        : estimateSentOrBeyond
-        ? "complete"
-        : publicStatus === "Estimate In Progress"
-        ? "current"
-        : "pending",
+      label: estimateNotRequired ? "Estimate N/A" : "Estimate",
+      status: estimateNotRequired ? "not_required" : estimateSentOrBeyond ? "complete" : publicStatus === "Estimate In Progress" ? "current" : "pending",
+      detail: estimateNotRequired ? "Not required" : getStatusWord(estimateSentOrBeyond ? "complete" : "pending"),
     },
     {
-      label: estimateNotRequired
-        ? "Estimate Approval Not Required"
-        : "Estimate Approved",
-      status: estimateNotRequired
-        ? "not_required"
-        : estimateSentOrBeyond
-        ? "complete"
-        : "pending",
-    },
-    {
-      label: depositNotRequired ? "Deposit Not Required" : "Deposit Received",
-      status: depositNotRequired
-        ? "not_required"
-        : Number(job.deposit_received ?? 0) >= Number(job.deposit_required ?? 0)
-        ? "complete"
-        : publicStatus === "Awaiting Deposit"
-        ? "current"
-        : "pending",
+      label: depositNotRequired ? "Deposit N/A" : "Deposit",
+      status: depositNotRequired ? "not_required" : Number(job.deposit_received ?? 0) >= Number(job.deposit_required ?? 0) ? "complete" : publicStatus === "Awaiting Deposit" ? "current" : "pending",
+      detail: depositNotRequired ? "Not required" : getStatusWord(Number(job.deposit_received ?? 0) >= Number(job.deposit_required ?? 0) ? "complete" : "pending"),
     },
     {
       label: "Construction",
-      status: constructionComplete
-        ? "complete"
-        : constructionActive
-        ? "current"
-        : "pending",
-      detail: publicStatus.includes("Construction") ? publicStatus : undefined,
+      status: constructionComplete ? "complete" : constructionActive ? "current" : "pending",
+      detail: constructionActive ? publicStatus : getStatusWord(constructionComplete ? "complete" : "pending"),
     },
     {
       label: "Inspection",
-      status: inspectionReached
-        ? serviceEnergized
-          ? "complete"
-          : "current"
-        : "pending",
+      status: inspectionReached ? (serviceEnergized ? "complete" : "current") : "pending",
+      detail: inspectionReached
+        ? publicStatus === "Inspection Pending"
+          ? "Waiting on inspection"
+          : "In review"
+        : "Pending",
     },
     {
-      label: "Service Energized",
+      label: "Completed",
       status: serviceEnergized ? "complete" : "pending",
-      detail: job.energized_at ? formatDateTime(job.energized_at) : undefined,
+      detail: serviceEnergized ? "Energized" : "Pending",
     },
   ];
 }
@@ -390,203 +712,680 @@ function formatPublicStatus(value: string | null | undefined) {
   return map[normalized] || normalized;
 }
 
-function getStepIcon(status: TimelineStep["status"]) {
-  if (status === "complete") return "●";
-  if (status === "current") return "◐";
-  if (status === "not_required") return "—";
-  return "○";
+function getTrackSymbol(status: TimelineStep["status"], label?: string) {
+  const normalizedLabel = (label || "").toLowerCase();
+
+  if (status === "complete" && normalizedLabel.includes("completed")) {
+    return <BookmarkCheckIcon />;
+  }
+
+  if (status === "complete") {
+    return "✓";
+  }
+
+  if (status === "current" && normalizedLabel.includes("construction")) {
+    return <HardHatIcon />;
+  }
+
+  if (status === "current") {
+    return <HourglassIcon />;
+  }
+
+  if (status === "not_required") {
+    return "✓";
+  }
+
+  return <HourglassIcon />;
+}
+
+function getStatusWord(status: TimelineStep["status"]) {
+  if (status === "complete") return "Complete";
+  if (status === "current") return "Current";
+  if (status === "not_required") return "Not required";
+  return "Pending";
+}
+
+function getFriendlyStatusMessage(job: MemberJob) {
+  const status = formatPublicStatus(job.public_status);
+
+  if (status.includes("Construction")) {
+    return "Your project is in the construction phase.";
+  }
+
+  if (status.includes("Deposit")) {
+    return "A deposit is needed before the project can move forward.";
+  }
+
+  if (
+    status.includes("Estimate") &&
+    job.estimate_status === "sent"
+  ) {
+    return "Estimate sent. Please review, approve, and return the signed estimate.";
+  }
+
+  if (status.includes("Estimate")) {
+    return "Estimate in progress. OMEC is preparing your estimate.";
+  }
+
+  if (status.includes("Inspection")) {
+    return "Waiting on inspection. OMEC is waiting for inspection before final completion.";
+  }
+
+  if (status.includes("Site Visit")) {
+    return "A site visit is being scheduled or prepared.";
+  }
+
+  if (status.includes("Energized")) {
+    return "Your service request has been completed.";
+  }
+
+  return "We are processing your service request.";
 }
 
 function formatEstimate(job: MemberJob) {
-  if (job.estimate_amount === null) return "Pending";
-  if (Number(job.estimate_amount) === 0) return "Not Required";
+  const publicStatus = formatPublicStatus(job.public_status);
+
+  const estimatePendingStatuses = [
+    "Application Received",
+    "Site Visit Fee Needed",
+    "Site Visit Scheduling",
+  ];
+
+  if (
+    estimatePendingStatuses.includes(publicStatus) &&
+    job.estimate_status !== "sent"
+  ) {
+    return "Pending";
+  }
+
+  if (job.estimate_amount === null) {
+    return "Pending";
+  }
+
+  if (Number(job.estimate_amount) === 0) {
+    return "Not Required";
+  }
+
   return `$${Number(job.estimate_amount).toFixed(2)}`;
 }
 
 function formatDeposit(job: MemberJob) {
-  if (Number(job.deposit_required ?? 0) === 0) return "Not Required";
+  const publicStatus = formatPublicStatus(job.public_status);
 
-  return `$${Number(job.deposit_received ?? 0).toFixed(2)} received of $${Number(
+  const estimatePendingStatuses = [
+    "Application Received",
+    "Site Visit Fee Needed",
+    "Site Visit Scheduling",
+  ];
+
+  if (
+    estimatePendingStatuses.includes(publicStatus) &&
+    job.estimate_status !== "sent"
+  ) {
+    return "Pending";
+  }
+
+  if (Number(job.deposit_required ?? 0) === 0) {
+    return "Not Required";
+  }
+
+  return `$${Number(job.deposit_received ?? 0).toFixed(2)} / $${Number(
     job.deposit_required ?? 0
   ).toFixed(2)}`;
 }
 
-function formatFinalPaymentRefund(job: MemberJob) {
-  if (!job.final_payment_received) {
-    return "Pending";
-  }
+function formatShortDate(value: string | null) {
+  if (!value) return "Pending";
 
-  const finalAmount = Number(job.final_bill_amount ?? 0);
-  const estimateAmount = Number(job.estimate_amount ?? 0);
-
-  if (estimateAmount > 0 && finalAmount < estimateAmount) {
-    return `$${Math.max(estimateAmount - finalAmount, 0).toFixed(2)} refund`;
-  }
-
-  if (finalAmount > 0) {
-    return `$${finalAmount.toFixed(2)}`;
-  }
-
-  return "Complete";
+  return new Date(value).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
-function getFinalPaymentRefundMessage(job: MemberJob) {
-  if (!job.final_payment_received) {
-    return "Final billing pending";
-  }
+function formatDocumentType(value: string | null | undefined) {
+  if (!value) return "Document";
 
-  const finalAmount = Number(job.final_bill_amount ?? 0);
-  const estimateAmount = Number(job.estimate_amount ?? 0);
-
-  if (estimateAmount > 0 && finalAmount < estimateAmount) {
-    return "Great news! Your job came in under estimate.";
-  }
-
-  if (estimateAmount > 0 && finalAmount > estimateAmount) {
-    return "Final amount is above estimate. Please contact OMEC with questions.";
-  }
-
-  return "Final payment complete";
+  return value
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function formatDateTime(value: string | null) {
-  if (!value) return "-";
-  return new Date(value).toLocaleString();
+function isImageDocument(fileName: string) {
+  return /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
 }
 
-function Detail({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <div style={{ fontSize: "12px", color: "#555", fontWeight: 700 }}>
-        {label}
-      </div>
-      <div>{value || "-"}</div>
-    </div>
-  );
+function getTrackCircleStyle(status: TimelineStep["status"]): React.CSSProperties {
+  const base: React.CSSProperties = {
+    width: "58px",
+    height: "58px",
+    borderRadius: "999px",
+    display: "grid",
+    placeItems: "center",
+    fontSize: "24px",
+    fontWeight: 800,
+    position: "relative",
+    zIndex: 2,
+    margin: "0 auto 10px",
+    boxShadow: "0 10px 24px rgba(0,0,0,0.12)",
+  };
+
+  if (status === "complete") {
+    return { ...base, background: "#21843b", color: "#ffffff" };
+  }
+
+  if (status === "current") {
+    return { ...base, background: "#2f9349", color: "#ffffff" };
+  }
+
+  if (status === "not_required") {
+    return { ...base, background: "#eef4ef", color: "#52715d", border: "1px solid #d7e2da" };
+  }
+
+  return { ...base, background: "#f2f3f2", color: "#58635b", border: "1px solid #d8ddda" };
 }
 
-const mainStyle: React.CSSProperties = {
-  padding: "40px",
-  fontFamily: "Arial, sans-serif",
-  background: "transparent",
-  color: "#111111",
+const shellStyle: React.CSSProperties = {
   minHeight: "100vh",
+  display: "grid",
+  gridTemplateColumns: "280px minmax(0, 1fr)",
+  background: "#f6f8f5",
+  color: "#071f14",
+  fontFamily: "Arial, sans-serif",
 };
 
-const brandHeaderStyle: React.CSSProperties = {
+const sidebarStyle: React.CSSProperties = {
+  backgroundImage:
+    "linear-gradient(rgba(0,40,24,0.35), rgba(0,40,24,0.55)), url('/omec-sidebar-bg.png')",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  color: "#ffffff",
+  padding: "28px 22px",
+  position: "sticky",
+  top: 0,
+  height: "100vh",
+  overflow: "hidden",
+};
+
+const contentStyle: React.CSSProperties = {
+  padding: "36px",
+  maxWidth: "1040px",
+  width: "100%",
+};
+
+const brandBlockStyle: React.CSSProperties = {
+  textAlign: "center",
+  marginBottom: "28px",
+  color: "#ffffff",
+};
+
+const brandLogoStyle: React.CSSProperties = {
+  width: "210px",
+  height: "210px",
+  objectFit: "contain",
+  filter: "drop-shadow(0 22px 40px rgba(0,0,0,0.34))",
+};
+
+const brandTitleStyle: React.CSSProperties = {
+  fontSize: "20px",
+  lineHeight: 1.35,
+  margin: "16px 0 6px",
+};
+
+const estStyle: React.CSSProperties = {
+  opacity: 0.8,
+  fontSize: "14px",
+};
+
+const navStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "12px",
+};
+
+const navItemStyle: React.CSSProperties = {
+  color: "#ffffff",
+  textDecoration: "none",
   display: "flex",
   alignItems: "center",
-  gap: "16px",
-  flexWrap: "wrap",
-};
-
-const logoStyle: React.CSSProperties = {
-  width: "84px",
-  height: "84px",
-  objectFit: "contain",
-  borderRadius: "999px",
-  background: "#fffaf0",
-  padding: "6px",
-  border: "2px solid #d8c8a3",
-};
-
-const sectionStyle: React.CSSProperties = {
-  marginTop: "32px",
-  maxWidth: "900px",
-  background: "#fffaf0",
-  color: "#111111",
-  border: "1px solid #d8c8a3",
-  borderRadius: "14px",
-  padding: "18px",
-};
-
-const messageStyle: React.CSSProperties = {
-  padding: "12px",
-  border: "1px solid #d8c8a3",
-  background: "#fffaf0",
-  color: "#111111",
+  gap: "12px",
+  padding: "14px 16px",
   borderRadius: "12px",
+  fontWeight: 700,
 };
 
-const emptyStateStyle: React.CSSProperties = {
-  padding: "16px",
-  border: "1px dashed #999",
-  background: "#fffdf7",
-  borderRadius: "12px",
+const activeNavStyle: React.CSSProperties = {
+  background: "linear-gradient(135deg, #2f9349, #1f7b39)",
+  boxShadow: "0 12px 26px rgba(0,0,0,0.18)",
 };
 
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  marginTop: "12px",
-  color: "#111111",
+const navIconStyle: React.CSSProperties = {
+  width: "28px",
+  display: "inline-grid",
+  placeItems: "center",
+  fontSize: "22px",
+  lineHeight: 1,
+};
+
+
+const sideHelpCardStyle: React.CSSProperties = {
+  marginTop: "42px",
+  padding: "28px 20px",
+  border: "1px solid rgba(255,255,255,0.24)",
+  borderRadius: "22px",
+  textAlign: "center",
+  background: "rgba(0, 38, 24, 0.28)",
+  boxShadow: "inset 0 0 0 1px rgba(80, 180, 100, 0.18)",
+  backdropFilter: "blur(2px)",
+  color: "#ffffff",
+};
+
+const sideHelpIconStyle: React.CSSProperties = {
+  fontSize: "34px",
+  marginBottom: "14px",
+};
+
+const sideHelpTitleStyle: React.CSSProperties = {
+  margin: "0 0 14px",
+  fontSize: "24px",
+  fontWeight: 900,
+  color: "#ffffff",
+};
+
+const sideHelpTextStyle: React.CSSProperties = {
+  margin: "0 0 22px",
+  lineHeight: 1.55,
+  fontSize: "16px",
   fontWeight: 600,
+  color: "#ffffff",
+};
+
+const sideHelpButtonStyle: React.CSSProperties = {
+  display: "block",
+  color: "#ffffff",
+  textDecoration: "none",
+  border: "1px solid rgba(255,255,255,0.65)",
+  borderRadius: "10px",
+  padding: "12px 16px",
+  fontWeight: 800,
+  background: "rgba(0, 45, 27, 0.28)",
+};
+
+
+const secureBadgeStyle: React.CSSProperties = {
+  float: "right",
+  color: "#0b6c32",
+  fontWeight: 800,
+  fontSize: "14px",
+};
+
+const heroStyle: React.CSSProperties = {
+  minHeight: "150px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "20px",
+  marginBottom: "22px",
+};
+
+const heroArtStyle: React.CSSProperties = {
+  flex: "0 0 280px",
+  height: "130px",
+  borderRadius: "22px",
+  background:
+    "linear-gradient(135deg, rgba(33,132,59,0.12), rgba(33,132,59,0.02)), radial-gradient(circle at 80% 20%, rgba(33,132,59,0.26), transparent 36%)",
+};
+
+const welcomeStyle: React.CSSProperties = {
+  color: "#176b36",
+  fontWeight: 800,
+  fontSize: "22px",
+  margin: 0,
+};
+
+const titleStyle: React.CSSProperties = {
+  fontSize: "46px",
+  lineHeight: 1,
+  margin: "8px 0 12px",
+  letterSpacing: "-1px",
+  color: "#072719",
+};
+
+const subtitleStyle: React.CSSProperties = {
+  fontSize: "18px",
+  margin: 0,
+  color: "#4d5a53",
+};
+
+const cardStyle: React.CSSProperties = {
+  background: "#ffffff",
+  border: "1px solid #e1e7e2",
+  borderRadius: "18px",
+  padding: "22px",
+  boxShadow: "0 14px 34px rgba(0,0,0,0.07)",
+  marginBottom: "20px",
+};
+
+const infoStripStyle: React.CSSProperties = {
+  ...cardStyle,
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+  gap: "14px",
+};
+
+const infoTileStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "14px",
+  minWidth: 0,
+};
+
+const infoIconStyle: React.CSSProperties = {
+  width: "48px",
+  height: "48px",
+  borderRadius: "999px",
+  background: "#edf6ef",
+  display: "grid",
+  placeItems: "center",
+  color: "#176b36",
+  fontWeight: 800,
+};
+
+const infoLabelStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "#65706a",
+  fontWeight: 700,
+};
+
+const infoValueStyle: React.CSSProperties = {
+  fontWeight: 800,
+  color: "#071f14",
+};
+
+const sectionHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: "12px",
+  alignItems: "center",
+  marginBottom: "18px",
+};
+
+const sectionTitleStyle: React.CSSProperties = {
+  fontSize: "22px",
+  margin: "0 0 12px",
+  color: "#071f14",
+};
+
+const updatedBadgeStyle: React.CSSProperties = {
+  fontSize: "12px",
+  border: "1px solid #dfe7e2",
+  borderRadius: "999px",
+  padding: "7px 10px",
+  color: "#3d5145",
+  background: "#fbfdfb",
+};
+
+const statusTrackStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(92px, 1fr))",
+  gap: "10px",
+  marginBottom: "22px",
+};
+
+const trackStepStyle: React.CSSProperties = {
+  position: "relative",
+  textAlign: "center",
+  minHeight: "122px",
+};
+
+const trackLineStyle: React.CSSProperties = {
+  position: "absolute",
+  top: "29px",
+  left: "50%",
+  right: "-50%",
+  height: "3px",
+  background: "#d9dfdc",
+  zIndex: 1,
+};
+
+const trackLabelStyle: React.CSSProperties = {
+  fontWeight: 800,
+  fontSize: "13px",
+};
+
+const trackDetailStyle: React.CSSProperties = {
+  color: "#64716a",
+  fontSize: "12px",
+  marginTop: "4px",
+};
+
+const statusMessageStyle: React.CSSProperties = {
+  padding: "16px",
+  borderRadius: "14px",
+  background: "#f0f8f1",
+  border: "1px solid #d6e9da",
+  color: "#163f26",
+};
+
+const twoColumnStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+  gap: "18px",
+  marginBottom: "20px",
+};
+
+const metricCardStyle: React.CSSProperties = {
+  ...cardStyle,
+  display: "flex",
+  alignItems: "center",
+  gap: "18px",
+  marginBottom: 0,
+};
+
+const metricIconStyle: React.CSSProperties = {
+  width: "56px",
+  height: "56px",
+  borderRadius: "999px",
+  background: "#21843b",
+  color: "#ffffff",
+  display: "grid",
+  placeItems: "center",
+  fontSize: "28px",
+  fontWeight: 800,
+};
+
+const metricLabelStyle: React.CSSProperties = {
+  color: "#5f6b64",
+  fontWeight: 700,
+};
+
+const metricValueStyle: React.CSSProperties = {
+  fontSize: "28px",
+  fontWeight: 900,
+  margin: "4px 0",
+};
+
+const documentFilterStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "10px",
+  flexWrap: "wrap",
+  marginBottom: "18px",
+};
+
+const filterPillStyle: React.CSSProperties = {
+  padding: "8px 12px",
+  borderRadius: "10px",
+  border: "1px solid #dfe5e1",
+  background: "#ffffff",
+  fontWeight: 700,
+  fontSize: "13px",
+};
+
+const filterPillActiveStyle: React.CSSProperties = {
+  ...filterPillStyle,
+  background: "#087234",
+  color: "#ffffff",
+};
+
+const documentGridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(138px, 1fr))",
+  gap: "16px",
+};
+
+const documentCardStyle: React.CSSProperties = {
+  minWidth: 0,
+};
+
+const documentPreviewLinkStyle: React.CSSProperties = {
+  display: "block",
+  height: "146px",
+  borderRadius: "14px",
+  background: "#f6f7f6",
+  border: "1px solid #e1e6e2",
+  overflow: "hidden",
+  textDecoration: "none",
+};
+
+const thumbnailStyle: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+};
+
+const pdfTileStyle: React.CSSProperties = {
+  height: "100%",
+  display: "grid",
+  placeItems: "center",
+  color: "#d71920",
+  fontWeight: 900,
+  fontSize: "26px",
+};
+
+const documentMetaStyle: React.CSSProperties = {
+  marginTop: "8px",
+};
+
+const documentDateStyle: React.CSSProperties = {
+  color: "#64716a",
+  fontSize: "12px",
+};
+
+const documentNameStyle: React.CSSProperties = {
+  fontWeight: 800,
+  fontSize: "13px",
+};
+
+const uploadGridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+  gap: "18px",
+  alignItems: "end",
+};
+
+const uploadOptionStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "14px",
+  alignItems: "center",
+  padding: "18px",
+  border: "1px dashed #cfd8d2",
+  borderRadius: "16px",
+  background: "#fbfdfb",
+};
+
+const uploadIconStyle: React.CSSProperties = {
+  width: "46px",
+  height: "46px",
+  borderRadius: "999px",
+  background: "#e7f3ea",
+  display: "grid",
+  placeItems: "center",
+  color: "#087234",
+  fontWeight: 900,
 };
 
 const inputStyle: React.CSSProperties = {
   display: "block",
   width: "100%",
-  padding: "8px",
-  marginTop: "4px",
-  background: "#ffffff",
-  color: "#111111",
-  border: "1px solid #d8c8a3",
+  marginTop: "8px",
+  padding: "10px",
   borderRadius: "10px",
+  border: "1px solid #d8e0db",
+  background: "#ffffff",
 };
 
-const statusCardStyle: React.CSSProperties = {
-  padding: "18px",
-  border: "1px solid #d8c8a3",
-  background: "#fffdf7",
-  borderRadius: "14px",
-  marginBottom: "18px",
+const fileInputStyle: React.CSSProperties = {
+  display: "block",
+  marginTop: "8px",
 };
 
-const statusLabelStyle: React.CSSProperties = {
-  fontSize: "12px",
-  fontWeight: 700,
-  color: "#555555",
-};
-
-const statusTextStyle: React.CSSProperties = {
-  fontSize: "26px",
+const primaryButtonStyle: React.CSSProperties = {
+  padding: "13px 18px",
+  borderRadius: "999px",
+  border: "1px solid #003c25",
+  background: "#00642f",
+  color: "#ffffff",
   fontWeight: 800,
-  color: "#143528",
+  cursor: "pointer",
 };
 
-const mutedStyle: React.CSSProperties = {
-  fontSize: "13px",
-  color: "#555555",
-};
-
-const detailGridStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+const supportCardStyle: React.CSSProperties = {
+  ...cardStyle,
+  background: "linear-gradient(135deg, #f1f9f2, #ffffff)",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
   gap: "16px",
 };
 
-const timelineStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "14px",
+const contactButtonStyle: React.CSSProperties = {
+  padding: "12px 18px",
+  borderRadius: "10px",
+  background: "#00462b",
+  color: "#ffffff",
+  textDecoration: "none",
+  fontWeight: 800,
 };
 
-const timelineRowStyle: React.CSSProperties = {
-  display: "flex",
-  gap: "12px",
-  alignItems: "flex-start",
+const pageFooterStyle: React.CSSProperties = {
+  textAlign: "center",
+  color: "#607168",
+  padding: "8px 0 28px",
+};
+
+const mutedStyle: React.CSSProperties = {
+  color: "#5f6b64",
+  fontSize: "14px",
+};
+
+const labelStyle: React.CSSProperties = {
+  fontWeight: 800,
+};
+
+const emptyStateStyle: React.CSSProperties = {
+  padding: "16px",
+  border: "1px dashed #ccd8d0",
+  borderRadius: "14px",
+  background: "#fbfdfb",
+  color: "#5f6b64",
+};
+
+const alertStyle: React.CSSProperties = {
+  marginTop: "14px",
   padding: "12px",
-  border: "1px solid #d8c8a3",
   borderRadius: "12px",
-  background: "#fffdf7",
+  background: "#f8fbf8",
+  border: "1px solid #d8e5db",
 };
 
-const timelineIconStyle: React.CSSProperties = {
-  fontSize: "20px",
-  lineHeight: "1",
-  minWidth: "24px",
-  fontWeight: 700,
-  color: "#143528",
+const loadingCardStyle: React.CSSProperties = {
+  margin: "40px",
+  padding: "30px",
+  background: "#ffffff",
+  borderRadius: "18px",
+  boxShadow: "0 14px 34px rgba(0,0,0,0.07)",
 };
 
-const timelineLabelStyle: React.CSSProperties = {
-  fontWeight: 700,
-};
