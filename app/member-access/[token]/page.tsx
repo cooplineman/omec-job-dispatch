@@ -857,7 +857,6 @@ function formatDeposit(job: MemberJob) {
 function formatFinalPaymentRefund(job: MemberJob) {
   const publicStatus = formatPublicStatus(job.public_status);
   const finalAmount = Number(job.final_bill_amount ?? 0);
-  const estimateAmount = Number(job.estimate_amount ?? 0);
 
   const finalStageReached =
     publicStatus === "Final Billing" ||
@@ -866,10 +865,6 @@ function formatFinalPaymentRefund(job: MemberJob) {
 
   if (!finalStageReached) {
     return "Pending";
-  }
-
-  if (estimateAmount > 0 && finalAmount > 0 && finalAmount < estimateAmount) {
-    return `$${Math.max(estimateAmount - finalAmount, 0).toFixed(2)} Refund`;
   }
 
   if (finalAmount > 0) {
@@ -885,8 +880,10 @@ function formatFinalPaymentRefund(job: MemberJob) {
 
 function getFinalPaymentRefundMessage(job: MemberJob) {
   const publicStatus = formatPublicStatus(job.public_status);
-  const finalAmount = Number(job.final_bill_amount ?? 0);
   const estimateAmount = Number(job.estimate_amount ?? 0);
+  const depositReceived = Number(job.deposit_received ?? 0);
+  const finalAmount = Number(job.final_bill_amount ?? 0);
+  const totalPaidOrDue = depositReceived + finalAmount;
 
   const finalStageReached =
     publicStatus === "Final Billing" ||
@@ -897,7 +894,7 @@ function getFinalPaymentRefundMessage(job: MemberJob) {
     return "Final billing pending";
   }
 
-  if (estimateAmount > 0 && finalAmount > 0 && finalAmount < estimateAmount) {
+  if (estimateAmount > 0 && totalPaidOrDue > 0 && totalPaidOrDue < estimateAmount) {
     return "Great news! Your job came in under estimate.";
   }
 
@@ -905,8 +902,8 @@ function getFinalPaymentRefundMessage(job: MemberJob) {
     return "Waiting on final payment";
   }
 
-  if (estimateAmount > 0 && finalAmount > estimateAmount) {
-    return "Final amount is above estimate. Please contact OMEC with questions.";
+  if (estimateAmount > 0 && totalPaidOrDue > estimateAmount) {
+    return "Final total is above estimate. Please contact OMEC with questions.";
   }
 
   return "Final payment complete";
