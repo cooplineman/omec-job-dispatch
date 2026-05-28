@@ -557,7 +557,7 @@ setConstructionStatusNote("");
   }
   async function saveEstimateDepositAmounts() {
     if (!canEdit) {
-      setMessage("You do not have permission to update estimate/deposit/final payment amounts.");
+      setMessage("You do not have permission to update estimate/deposit amounts.");
       return;
     }
 
@@ -573,13 +573,13 @@ setConstructionStatusNote("");
     const parsedDepositReceived =
       depositReceived.trim() === "" ? 0 : parseMoney(depositReceived);
     const parsedFinalPaymentRefund =
-      finalPaymentRefund.trim() === "" ? 0 : parseMoney(finalPaymentRefund);
+      finalPaymentRefund.trim() === "" ? null : parseMoney(finalPaymentRefund);
 
     if (
-      (parsedEstimate === null && estimateAmount.trim() !== "") ||
+      parsedEstimate === null && estimateAmount.trim() !== "" ||
       parsedDepositRequired === null ||
       parsedDepositReceived === null ||
-      parsedFinalPaymentRefund === null
+      parsedFinalPaymentRefund === null && finalPaymentRefund.trim() !== ""
     ) {
       window.alert("Enter valid dollar amounts before saving.");
       setMessage("Cannot save: valid estimate/deposit/final payment amounts are required.");
@@ -624,7 +624,7 @@ setConstructionStatusNote("");
     });
 
     if (error) {
-      setMessage(`Error saving estimate/deposit/final payment amounts: ${error.message}`);
+      setMessage(`Error saving estimate/deposit amounts: ${error.message}`);
     } else {
       setMessage(`Saved estimate/deposit/final payment amounts for ${selectedJobNumber}`);
       await loadDashboard();
@@ -1449,7 +1449,7 @@ ${accessLink}`);
                   disabled={updating || !selectedJobNumber}
                   style={buttonStyle}
                 >
-                  Save Estimate / Deposit / Final Payment
+                  Save Estimate / Deposit / Final Amounts
                 </button>
               </section>
               {canShowConstructionControls(selectedJobDetail) && (
