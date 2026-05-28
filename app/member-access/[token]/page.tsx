@@ -854,9 +854,12 @@ function formatDeposit(job: MemberJob) {
   ).toFixed(2)}`;
 }
 
+function hasFinalPaymentRefundAmount(job: MemberJob) {
+  return job.final_bill_amount !== null && job.final_bill_amount !== undefined;
+}
+
 function formatFinalPaymentRefund(job: MemberJob) {
   const publicStatus = formatPublicStatus(job.public_status);
-  const finalAmount = Number(job.final_bill_amount ?? 0);
 
   const finalStageReached =
     publicStatus === "Final Billing" ||
@@ -867,12 +870,8 @@ function formatFinalPaymentRefund(job: MemberJob) {
     return "Pending";
   }
 
-  if (finalAmount > 0) {
-    return `$${finalAmount.toFixed(2)}`;
-  }
-
-  if (job.final_payment_received) {
-    return "Complete";
+  if (hasFinalPaymentRefundAmount(job)) {
+    return `$${Number(job.final_bill_amount).toFixed(2)}`;
   }
 
   return "Waiting";
@@ -882,8 +881,10 @@ function getFinalPaymentRefundMessage(job: MemberJob) {
   const publicStatus = formatPublicStatus(job.public_status);
   const estimateAmount = Number(job.estimate_amount ?? 0);
   const depositReceived = Number(job.deposit_received ?? 0);
-  const finalAmount = Number(job.final_bill_amount ?? 0);
-  const totalPaidOrDue = depositReceived + finalAmount;
+  const finalAmount = hasFinalPaymentRefundAmount(job)
+    ? Number(job.final_bill_amount)
+    : null;
+  const totalPaidOrDue = finalAmount === null ? null : depositReceived + finalAmount;
 
   const finalStageReached =
     publicStatus === "Final Billing" ||
@@ -894,7 +895,11 @@ function getFinalPaymentRefundMessage(job: MemberJob) {
     return "Final billing pending";
   }
 
-  if (estimateAmount > 0 && totalPaidOrDue > 0 && totalPaidOrDue < estimateAmount) {
+  if (finalAmount === null) {
+    return "Waiting on final payment amount";
+  }
+
+  if (estimateAmount > 0 && totalPaidOrDue !== null && totalPaidOrDue < estimateAmount) {
     return "Great news! Your job came in under estimate.";
   }
 
@@ -902,7 +907,7 @@ function getFinalPaymentRefundMessage(job: MemberJob) {
     return "Waiting on final payment";
   }
 
-  if (estimateAmount > 0 && totalPaidOrDue > estimateAmount) {
+  if (estimateAmount > 0 && totalPaidOrDue !== null && totalPaidOrDue > estimateAmount) {
     return "Final total is above estimate. Please contact OMEC with questions.";
   }
 
