@@ -552,6 +552,81 @@ setConstructionStatusNote("");
 
     setSavingEditInfo(false);
   }
+  async function saveEstimateDepositAmounts() {
+    if (!canEdit) {
+      setMessage("You do not have permission to update estimate/deposit amounts.");
+      return;
+    }
+
+    if (!selectedJobNumber) {
+      setMessage("Select a job first.");
+      return;
+    }
+
+    const parsedEstimate =
+      estimateAmount.trim() === "" ? null : parseMoney(estimateAmount);
+    const parsedDepositRequired =
+      depositRequired.trim() === "" ? 0 : parseMoney(depositRequired);
+    const parsedDepositReceived =
+      depositReceived.trim() === "" ? 0 : parseMoney(depositReceived);
+
+    if (
+      parsedEstimate === null && estimateAmount.trim() !== "" ||
+      parsedDepositRequired === null ||
+      parsedDepositReceived === null
+    ) {
+      window.alert("Enter valid dollar amounts before saving.");
+      setMessage("Cannot save: valid estimate/deposit amounts are required.");
+      return;
+    }
+
+    if (
+      parsedEstimate !== null &&
+      parsedEstimate > 0 &&
+      Number(parsedDepositRequired ?? 0) === 0
+    ) {
+      const confirmed = window.confirm(
+        "Estimate amount is greater than $0, but Deposit Required is $0. Confirm that no deposit is required for this job?"
+      );
+
+      if (!confirmed) {
+        setMessage(
+          "Save canceled. Enter a Deposit Required amount, or confirm that no deposit is required."
+        );
+        return;
+      }
+    }
+
+    setUpdating(true);
+    setMessage("");
+
+    const { error } = await supabase.rpc("update_job_workflow_status", {
+      p_job_number: selectedJobNumber,
+      p_membership_status: null,
+      p_site_fee_status: null,
+      p_site_visit_at: null,
+      p_estimate_status: null,
+      p_estimate_amount: parsedEstimate,
+      p_deposit_required: parsedDepositRequired,
+      p_deposit_received: parsedDepositReceived,
+      p_construction_status: null,
+      p_inspection_received: null,
+      p_inspection_received_at: null,
+      p_final_payment_received: null,
+      p_energized_at: null,
+    });
+
+    if (error) {
+      setMessage(`Error saving estimate/deposit amounts: ${error.message}`);
+    } else {
+      setMessage(`Saved estimate/deposit amounts for ${selectedJobNumber}`);
+      await loadDashboard();
+      await loadSelectedJobData(selectedJobNumber);
+    }
+
+    setUpdating(false);
+  }
+
   async function generateMemberAccessLink() {
     if (!canEdit) {
       setMessage("You do not have permission to generate member access links.");
@@ -1345,6 +1420,15 @@ ${accessLink}`);
                   <FormInput label="Deposit Required" value={depositRequired} onChange={setDepositRequired} />
                   <FormInput label="Deposit Received" value={depositReceived} onChange={setDepositReceived} />
                 </div>
+
+                <button
+                  type="button"
+                  onClick={saveEstimateDepositAmounts}
+                  disabled={updating || !selectedJobNumber}
+                  style={buttonStyle}
+                >
+                  Save Estimate / Deposit Amounts
+                </button>
               </section>
               {canShowConstructionControls(selectedJobDetail) && (
               <section style={sectionStyle}>
