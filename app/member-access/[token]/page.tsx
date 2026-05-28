@@ -751,7 +751,7 @@ const shellStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "280px minmax(0, 1fr)",
   background: "#f6f8f5",
-  color: "#071f14",
+  color: "#ffffff",
   fontFamily: "Arial, sans-serif",
 };
 
@@ -804,6 +804,7 @@ const navStyle: React.CSSProperties = {
 
 const navItemStyle: React.CSSProperties = {
   color: "#ffffff",
+  color: "#ffffff",
   textDecoration: "none",
   display: "flex",
   alignItems: "center",
@@ -845,12 +846,14 @@ const sideHelpIconStyle: React.CSSProperties = {
 };
 
 const sideHelpTitleStyle: React.CSSProperties = {
+  color: "#ffffff",
   margin: "0 0 14px",
   fontSize: "24px",
   fontWeight: 900,
 };
 
 const sideHelpTextStyle: React.CSSProperties = {
+  color: "#ffffff",
   margin: "0 0 22px",
   lineHeight: 1.55,
   fontSize: "16px",
@@ -957,7 +960,7 @@ const infoLabelStyle: React.CSSProperties = {
 
 const infoValueStyle: React.CSSProperties = {
   fontWeight: 800,
-  color: "#071f14",
+  color: "#ffffff",
 };
 
 const sectionHeaderStyle: React.CSSProperties = {
@@ -971,7 +974,7 @@ const sectionHeaderStyle: React.CSSProperties = {
 const sectionTitleStyle: React.CSSProperties = {
   fontSize: "22px",
   margin: "0 0 12px",
-  color: "#071f14",
+  color: "#ffffff",
 };
 
 const updatedBadgeStyle: React.CSSProperties = {
@@ -1053,7 +1056,7 @@ const metricIconStyle: React.CSSProperties = {
 };
 
 const metricLabelStyle: React.CSSProperties = {
-  color: "#5f6b64",
+  color: "rgba(255,255,255,0.88)",
   fontWeight: 700,
 };
 
@@ -1208,12 +1211,12 @@ const contactButtonStyle: React.CSSProperties = {
 
 const pageFooterStyle: React.CSSProperties = {
   textAlign: "center",
-  color: "#607168",
+  color: "rgba(255,255,255,0.82)",
   padding: "8px 0 28px",
 };
 
 const mutedStyle: React.CSSProperties = {
-  color: "#5f6b64",
+  color: "rgba(255,255,255,0.88)",
   fontSize: "14px",
 };
 
@@ -1226,7 +1229,7 @@ const emptyStateStyle: React.CSSProperties = {
   border: "1px dashed #ccd8d0",
   borderRadius: "14px",
   background: "#fbfdfb",
-  color: "#5f6b64",
+  color: "rgba(255,255,255,0.88)",
 };
 
 const alertStyle: React.CSSProperties = {
