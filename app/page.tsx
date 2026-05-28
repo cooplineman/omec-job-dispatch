@@ -826,19 +826,9 @@ ${accessLink}`);
     }
 
     if (actionId === "estimate_sent") {
-      if (estimateAmount.trim() === "") {
-        window.alert(
-          "Cannot mark estimate sent: enter an Estimate Amount, or enter 0 if no Aid to Construction is required."
-        );
-        setMessage(
-          "Cannot mark estimate sent: Estimate Amount is required, or enter 0 for no Aid to Construction."
-        );
-        return null;
-      }
-
-      const amount = parseMoney(estimateAmount);
-      const required = parseMoney(depositRequired) ?? 0;
-      const received = parseMoney(depositReceived) ?? 0;
+      const amount = estimateAmount.trim() === "" ? 0 : parseMoney(estimateAmount);
+      const required = depositRequired.trim() === "" ? 0 : parseMoney(depositRequired);
+      const received = depositReceived.trim() === "" ? 0 : parseMoney(depositReceived);
 
       if (amount === null || amount < 0) {
         window.alert("Cannot mark estimate sent: enter a valid Estimate Amount.");
@@ -846,36 +836,31 @@ ${accessLink}`);
         return null;
       }
 
-      if (required < 0 || received < 0) {
+      if (required === null || required < 0 || received === null || received < 0) {
         window.alert("Cannot mark estimate sent: enter valid deposit amounts.");
         setMessage("Cannot mark estimate sent: valid deposit amounts required.");
         return null;
       }
 
-      if (amount > 0 && required === 0) {
+      if (amount === 0 || required === 0) {
         const confirmed = window.confirm(
-          "Estimate amount is greater than $0, but Deposit Required is $0. Confirm that no deposit is required for this job?"
+          "Estimate Amount or Deposit Required is $0. Confirm this job does not require a signed estimate/deposit step and should move toward construction?"
         );
 
         if (!confirmed) {
           setMessage(
-            "Estimate sent was canceled. Enter a Deposit Required amount, or confirm that no deposit is required."
+            "Estimate sent was canceled. Enter Estimate Amount and Deposit Required if approval/deposit is required."
           );
           return null;
         }
-      }
 
-      if (amount === 0) {
-        const confirmed = window.confirm(
-          "Confirm no Aid to Construction is required for this job?"
-        );
-
-        if (!confirmed) {
-          setMessage(
-            "Estimate sent was canceled. Enter an Estimate Amount if Aid to Construction is required."
-          );
-          return null;
-        }
+        return {
+          p_estimate_status: "signed",
+          p_estimate_amount: amount,
+          p_deposit_required: 0,
+          p_deposit_received: 0,
+          p_construction_status: "pending",
+        };
       }
 
       return {
@@ -1694,37 +1679,64 @@ function canShowConstructionControls(job: JobDetail | null) {
     "closed_energized",
   ].includes(job.current_stage);
 }
-function getNextActions(job: (JobListItem & { estimate_status?: string | null }) | undefined): WorkflowAction[] {
+function getNextActions(
+  job:
+    | (JobListItem & {
+        estimate_status?: string | null;
+        estimate_amount?: number | null;
+        deposit_required?: number | null;
+      })
+    | undefined
+): WorkflowAction[] {
   if (!job) return [];
 
   switch (job.current_stage) {
     case "membership_needed":
       return [{ id: "membership_complete", label: "Mark Membership Complete" }];
+
     case "site_fee_needed":
       return [{ id: "site_fee_paid", label: "Mark Site Fee Paid" }];
+
     case "site_visit_needed":
       return [{ id: "set_site_visit", label: "Set Site Visit Date" }];
+
     case "estimate_needed":
       if (job.estimate_status === "sent") {
+        const amount = Number(job.estimate_amount ?? 0);
+        const required = Number(job.deposit_required ?? 0);
+
+        if (amount === 0 || required === 0) {
+          return [];
+        }
+
         return [{ id: "estimate_signed", label: "Mark Estimate Signed" }];
       }
+
       return [{ id: "estimate_sent", label: "Mark Estimate Sent" }];
+
     case "awaiting_deposit":
       return [{ id: "deposit_received", label: "Update Deposit Received" }];
+
     case "ready_for_construction":
       return [{ id: "construction_in_progress", label: "Mark Construction In Progress" }];
+
     case "in_construction":
       return [{ id: "construction_complete", label: "Mark Construction Complete" }];
+
     case "waiting_on_inspection":
       return [{ id: "inspection_received", label: "Mark Inspection Received" }];
+
     case "final_billing":
       if (job.gate_message === "STOP - Final Payment not received") {
         return [{ id: "final_payment_received", label: "Mark Final Payment Received" }];
       }
+
       if (job.gate_message === "GO - Energize Service") {
         return [{ id: "energized_closed", label: "Mark Energized / Closed" }];
       }
+
       return [];
+
     default:
       return [];
   }
