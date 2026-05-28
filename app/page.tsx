@@ -837,6 +837,8 @@ ${accessLink}`);
       }
 
       const amount = parseMoney(estimateAmount);
+      const required = parseMoney(depositRequired) ?? 0;
+      const received = parseMoney(depositReceived) ?? 0;
 
       if (amount === null || amount < 0) {
         window.alert("Cannot mark estimate sent: enter a valid Estimate Amount.");
@@ -844,30 +846,43 @@ ${accessLink}`);
         return null;
       }
 
+      if (required < 0 || received < 0) {
+        window.alert("Cannot mark estimate sent: enter valid deposit amounts.");
+        setMessage("Cannot mark estimate sent: valid deposit amounts required.");
+        return null;
+      }
+
+      if (amount > 0 && required === 0) {
+        const confirmed = window.confirm(
+          "Estimate amount is greater than $0, but Deposit Required is $0. Confirm that no deposit is required for this job?"
+        );
+
+        if (!confirmed) {
+          setMessage(
+            "Estimate sent was canceled. Enter a Deposit Required amount, or confirm that no deposit is required."
+          );
+          return null;
+        }
+      }
+
       if (amount === 0) {
         const confirmed = window.confirm(
-          "Confirm no Aid to Construction is required for this job? This will skip the deposit workflow and move the job toward construction."
+          "Confirm no Aid to Construction is required for this job?"
         );
-      
+
         if (!confirmed) {
           setMessage(
             "Estimate sent was canceled. Enter an Estimate Amount if Aid to Construction is required."
           );
           return null;
         }
-      
-        return {
-          p_estimate_status: "signed",
-          p_estimate_amount: 0,
-          p_deposit_required: 0,
-          p_deposit_received: 0,
-          p_construction_status: "pending",
-        };
       }
 
       return {
         p_estimate_status: "sent",
         p_estimate_amount: amount,
+        p_deposit_required: required,
+        p_deposit_received: received,
       };
     }
 
