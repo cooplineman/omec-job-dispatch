@@ -248,13 +248,34 @@ export default function MemberAccessPage({
 
         <nav style={navStyle}>
           <a href="#overview" style={{ ...navItemStyle, ...activeNavStyle }}>
-            <span style={navIconStyle}>⌂</span> Overview
+            <Image
+              src="/home_icon.png"
+              alt=""
+              width={28}
+              height={28}
+              style={navIconImageStyle}
+            />
+            Overview
           </a>
           <a href="#documents" style={navItemStyle}>
-            <span style={navIconStyle}>▰</span> Documents
+            <Image
+              src="/file_icon.png"
+              alt=""
+              width={28}
+              height={28}
+              style={navIconImageStyle}
+            />
+            Documents
           </a>
           <a href="#uploads" style={navItemStyle}>
-            <span style={navIconStyle}>☁↑</span> Uploads
+            <Image
+              src="/upload_icon.png"
+              alt=""
+              width={28}
+              height={28}
+              style={navIconImageStyle}
+            />
+            Uploads
           </a>
         </nav>
 
@@ -270,12 +291,7 @@ export default function MemberAccessPage({
             Contact Us
           </a>
         </div>
-
-        <div style={sidebarFooterStyle}>
-          © 2026 Oneida-Madison<br />
-          Electric Cooperative, Inc.
-        </div>
-      </aside>
+</aside>
 
       <section style={contentStyle}>
         <div style={secureBadgeStyle}>▣ Secure Member Access</div>
@@ -492,8 +508,8 @@ function BrandBlock() {
       <Image
         src="/omec-logo.png"
         alt="OMEC logo"
-        width={150}
-        height={150}
+        width={210}
+        height={210}
         style={brandLogoStyle}
       />
     </div>
@@ -749,12 +765,14 @@ const contentStyle: React.CSSProperties = {
 
 const brandBlockStyle: React.CSSProperties = {
   textAlign: "center",
-  marginBottom: "34px",
+  marginBottom: "28px",
 };
 
 const brandLogoStyle: React.CSSProperties = {
+  width: "210px",
+  height: "210px",
   objectFit: "contain",
-  filter: "drop-shadow(0 18px 34px rgba(0,0,0,0.28))",
+  filter: "drop-shadow(0 22px 40px rgba(0,0,0,0.34))",
 };
 
 const brandTitleStyle: React.CSSProperties = {
@@ -797,6 +815,13 @@ const navIconStyle: React.CSSProperties = {
   lineHeight: 1,
 };
 
+const navIconImageStyle: React.CSSProperties = {
+  width: "28px",
+  height: "28px",
+  objectFit: "contain",
+  filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.24))",
+};
+
 const sideHelpCardStyle: React.CSSProperties = {
   marginTop: "42px",
   padding: "28px 20px",
@@ -806,6 +831,7 @@ const sideHelpCardStyle: React.CSSProperties = {
   background: "rgba(0, 38, 24, 0.28)",
   boxShadow: "inset 0 0 0 1px rgba(80, 180, 100, 0.18)",
   backdropFilter: "blur(2px)",
+  color: "#ffffff",
 };
 
 const sideHelpIconStyle: React.CSSProperties = {
@@ -824,29 +850,20 @@ const sideHelpTextStyle: React.CSSProperties = {
   lineHeight: 1.55,
   fontSize: "16px",
   fontWeight: 600,
+  color: "#ffffff",
 };
 
 const sideHelpButtonStyle: React.CSSProperties = {
   display: "block",
   color: "#ffffff",
   textDecoration: "none",
-  border: "1px solid rgba(78, 190, 95, 0.55)",
+  border: "1px solid rgba(78, 190, 95, 0.65)",
   borderRadius: "10px",
   padding: "12px 16px",
   fontWeight: 800,
-  background: "rgba(0, 45, 27, 0.22)",
+  background: "rgba(0, 45, 27, 0.28)",
 };
 
-const sidebarFooterStyle: React.CSSProperties = {
-  position: "absolute",
-  bottom: "28px",
-  left: "22px",
-  right: "22px",
-  fontSize: "13px",
-  opacity: 0.75,
-  textAlign: "center",
-  lineHeight: 1.6,
-};
 
 const secureBadgeStyle: React.CSSProperties = {
   float: "right",
