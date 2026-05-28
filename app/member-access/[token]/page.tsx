@@ -374,8 +374,8 @@ export default function MemberAccessPage({
               <CircleDollarSignIcon />
             </div>
             <div>
-              <div style={metricLabelStyle}>Final Payment / Refund</div>
-              <div style={metricValueStyle}>{formatFinalPaymentRefund(selectedJob)}</div>
+              <div style={metricLabelStyle}>{getFinalPaymentLabel(selectedJob)}</div>
+              <div style={getFinalPaymentValueStyle(selectedJob)}>{formatFinalPaymentRefund(selectedJob)}</div>
               <div style={mutedStyle}>{getFinalPaymentRefundMessage(selectedJob)}</div>
             </div>
           </div>
@@ -688,7 +688,7 @@ function buildMemberTimeline(job: MemberJob | null): TimelineStep[] {
       detail: inspectionPending ? "Waiting on inspection" : serviceEnergized || finalBilling ? "Complete" : "Pending",
     },
     {
-      label: "Final Payment / Refund",
+      label: getFinalPaymentLabel(job),
       status: finalPaymentComplete ? "complete" : finalBilling ? "current" : "pending",
       detail: finalPaymentComplete ? "Complete" : finalBilling ? "Waiting on final payment" : "Pending",
     },
@@ -854,8 +854,26 @@ function formatDeposit(job: MemberJob) {
   ).toFixed(2)}`;
 }
 
-function hasFinalPaymentRefundAmount(job: MemberJob) {
+function hasFinalPaymentAmount(job: MemberJob) {
   return job.final_bill_amount !== null && job.final_bill_amount !== undefined;
+}
+
+function getFinalPaymentLabel(job: MemberJob) {
+  if (hasFinalPaymentAmount(job) && Number(job.final_bill_amount) < 0) {
+    return "Refund";
+  }
+
+  return "Final Payment";
+}
+
+function formatSignedMoney(value: number) {
+  const absoluteValue = Math.abs(value).toFixed(2);
+
+  if (value < 0) {
+    return `-$${absoluteValue}`;
+  }
+
+  return `$${absoluteValue}`;
 }
 
 function formatFinalPaymentRefund(job: MemberJob) {
@@ -870,8 +888,8 @@ function formatFinalPaymentRefund(job: MemberJob) {
     return "Pending";
   }
 
-  if (hasFinalPaymentRefundAmount(job)) {
-    return `$${Number(job.final_bill_amount).toFixed(2)}`;
+  if (hasFinalPaymentAmount(job)) {
+    return formatSignedMoney(Number(job.final_bill_amount));
   }
 
   return "Waiting";
@@ -881,7 +899,7 @@ function getFinalPaymentRefundMessage(job: MemberJob) {
   const publicStatus = formatPublicStatus(job.public_status);
   const estimateAmount = Number(job.estimate_amount ?? 0);
   const depositReceived = Number(job.deposit_received ?? 0);
-  const finalAmount = hasFinalPaymentRefundAmount(job)
+  const finalAmount = hasFinalPaymentAmount(job)
     ? Number(job.final_bill_amount)
     : null;
   const totalPaidOrDue = finalAmount === null ? null : depositReceived + finalAmount;
@@ -899,6 +917,10 @@ function getFinalPaymentRefundMessage(job: MemberJob) {
     return "Waiting on final payment amount";
   }
 
+  if (finalAmount < 0) {
+    return "OMEC will refund this amount to you.";
+  }
+
   if (estimateAmount > 0 && totalPaidOrDue !== null && totalPaidOrDue < estimateAmount) {
     return "Great news! Your job came in under estimate.";
   }
@@ -912,6 +934,14 @@ function getFinalPaymentRefundMessage(job: MemberJob) {
   }
 
   return "Final payment complete";
+}
+
+function getFinalPaymentValueStyle(job: MemberJob): React.CSSProperties {
+  if (hasFinalPaymentAmount(job) && Number(job.final_bill_amount) < 0) {
+    return { ...metricValueStyle, color: "#c81e1e" };
+  }
+
+  return metricValueStyle;
 }
 
 function formatShortDate(value: string | null) {
