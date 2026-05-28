@@ -264,18 +264,7 @@ export default function MemberAccessPage({
           </a>
         </nav>
 
-        <div style={sideHelpCardStyle}>
-          <div style={sideHelpIconStyle}>☏</div>
-          <h3 style={sideHelpTitleStyle}>Need Help?</h3>
-          <p style={sideHelpTextStyle}>
-            Our team is here to help.<br />
-            Please reach out with<br />
-            any questions.
-          </p>
-          <a href="mailto:office@oneidamadison.com" style={sideHelpButtonStyle}>
-            Contact Us
-          </a>
-        </div>
+
       </aside>
 
       <section style={contentStyle}>
@@ -437,38 +426,46 @@ export default function MemberAccessPage({
             Share site/construction photos or inspection documents with OMEC.
           </p>
 
-          <form onSubmit={uploadMemberDocument} style={uploadGridStyle}>
-            <label style={uploadOptionStyle}>
-              <span style={uploadIconStyle}>▧</span>
-              <span>
-                <strong>Upload Type</strong>
-                <select
-                  value={memberDocumentType}
-                  onChange={(event) => setMemberDocumentType(event.target.value)}
-                  style={inputStyle}
-                >
-                  <option value="site_photo">Site Photo</option>
-                  <option value="construction_photo">Construction Photo</option>
-                  <option value="inspection">Inspection</option>
-                </select>
-              </span>
-            </label>
-
-            <label style={uploadOptionStyle}>
-              <span style={uploadIconStyle}>⇧</span>
-              <span>
-                <strong>Choose File</strong>
-                <input
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
-                  style={fileInputStyle}
-                />
-                <span style={mutedStyle}>
-                  {selectedFile ? selectedFile.name : "JPG, PNG, or PDF"}
+          <form onSubmit={uploadMemberDocument} style={uploadFormStyle}>
+            <div style={uploadFieldsStyle}>
+              <label style={uploadFieldStyle}>
+                <span style={uploadFieldIconStyle}>
+                  <FileDigitIcon />
                 </span>
-              </span>
-            </label>
+                <span style={uploadFieldBodyStyle}>
+                  <strong style={uploadFieldLabelStyle}>Upload Type</strong>
+                  <select
+                    value={memberDocumentType}
+                    onChange={(event) => setMemberDocumentType(event.target.value)}
+                    style={uploadSelectStyle}
+                  >
+                    <option value="site_photo">Site Photo</option>
+                    <option value="construction_photo">Construction Photo</option>
+                    <option value="inspection">Inspection</option>
+                  </select>
+                </span>
+              </label>
+
+              <label style={uploadFieldStyle}>
+                <span style={uploadFieldIconStyle}>
+                  <CloudUploadIcon />
+                </span>
+                <span style={uploadFieldBodyStyle}>
+                  <strong style={uploadFieldLabelStyle}>Choose File</strong>
+                  <span style={filePickerRowStyle}>
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
+                      style={fileInputStyle}
+                    />
+                  </span>
+                  <span style={fileHintStyle}>
+                    {selectedFile ? selectedFile.name : "JPG, PNG, or PDF"}
+                  </span>
+                </span>
+              </label>
+            </div>
 
             <button type="submit" disabled={uploading} style={primaryButtonStyle}>
               {uploading ? "Uploading..." : "Upload File"}
@@ -479,13 +476,15 @@ export default function MemberAccessPage({
         </section>
 
         <section id="help" style={supportCardStyle}>
-          <div>
+          <div style={supportIconStyle}>
+            <HelpCircleIcon />
+          </div>
+          <div style={supportContentStyle}>
             <h2 style={{ ...sectionTitleStyle, margin: 0 }}>
               Questions about your project?
             </h2>
-            <p style={{ ...mutedStyle, marginBottom: 0 }}>
-              Our team is here to help. Please contact OMEC and reference job{" "}
-              <strong>{selectedJob.job_number}</strong>.
+            <p style={{ ...mutedStyle, margin: "8px 0 0" }}>
+              Contact OMEC and reference job <strong>{selectedJob.job_number}</strong>.
             </p>
           </div>
           <a href="mailto:office@oneidamadison.com" style={contactButtonStyle}>
@@ -493,7 +492,7 @@ export default function MemberAccessPage({
           </a>
         </section>
 
-        <footer style={pageFooterStyle}>Secure • Private • Trusted</footer>
+
       </section>
     </main>
   );
@@ -628,6 +627,18 @@ function UserIcon() {
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M20 21a8 8 0 0 0-16 0" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2.2" />
+    </svg>
+  );
+}
+
+
+
+function HelpCircleIcon() {
+  return (
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.2" />
+      <path d="M9.5 9a2.7 2.7 0 0 1 5.2 1c0 2-2.7 2.1-2.7 4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 17.5h.01" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
     </svg>
   );
 }
@@ -1118,48 +1129,7 @@ const navIconStyle: React.CSSProperties = {
   lineHeight: 1,
 };
 
-const sideHelpCardStyle: React.CSSProperties = {
-  marginTop: "42px",
-  padding: "28px 20px",
-  border: "1px solid rgba(255,255,255,0.24)",
-  borderRadius: "22px",
-  textAlign: "center",
-  background: "rgba(0, 38, 24, 0.28)",
-  boxShadow: "inset 0 0 0 1px rgba(80, 180, 100, 0.18)",
-  backdropFilter: "blur(2px)",
-  color: "#ffffff",
-};
 
-const sideHelpIconStyle: React.CSSProperties = {
-  fontSize: "34px",
-  marginBottom: "14px",
-};
-
-const sideHelpTitleStyle: React.CSSProperties = {
-  margin: "0 0 14px",
-  fontSize: "24px",
-  fontWeight: 900,
-  color: "#ffffff",
-};
-
-const sideHelpTextStyle: React.CSSProperties = {
-  margin: "0 0 22px",
-  lineHeight: 1.55,
-  fontSize: "16px",
-  fontWeight: 600,
-  color: "#ffffff",
-};
-
-const sideHelpButtonStyle: React.CSSProperties = {
-  display: "block",
-  color: "#ffffff",
-  textDecoration: "none",
-  border: "1px solid rgba(255,255,255,0.65)",
-  borderRadius: "10px",
-  padding: "12px 16px",
-  fontWeight: 800,
-  background: "rgba(0, 45, 27, 0.28)",
-};
 
 
 const heroStyle: React.CSSProperties = {
@@ -1424,82 +1394,135 @@ const documentNameStyle: React.CSSProperties = {
   fontSize: "13px",
 };
 
-const uploadGridStyle: React.CSSProperties = {
+const uploadFormStyle: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-  gap: "18px",
-  alignItems: "end",
+  gridTemplateColumns: "minmax(0, 1fr) auto",
+  gap: "22px",
+  alignItems: "stretch",
 };
 
-const uploadOptionStyle: React.CSSProperties = {
+const uploadFieldsStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+  gap: "18px",
+};
+
+const uploadFieldStyle: React.CSSProperties = {
   display: "flex",
-  gap: "14px",
+  gap: "16px",
   alignItems: "center",
   padding: "18px",
-  border: "1px dashed #cfd8d2",
-  borderRadius: "16px",
+  border: "1px solid #d8e3dc",
+  borderRadius: "18px",
   background: "#fbfdfb",
+  minHeight: "112px",
 };
 
-const uploadIconStyle: React.CSSProperties = {
-  width: "46px",
-  height: "46px",
-  borderRadius: "999px",
+const uploadFieldIconStyle: React.CSSProperties = {
+  width: "52px",
+  height: "52px",
+  borderRadius: "16px",
   background: "#e7f3ea",
   display: "grid",
   placeItems: "center",
-  color: "#087234",
-  fontWeight: 900,
+  color: "#21843b",
+  flex: "0 0 auto",
 };
 
-const inputStyle: React.CSSProperties = {
-  display: "block",
+const uploadFieldBodyStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
   width: "100%",
-  marginTop: "8px",
-  padding: "10px",
-  borderRadius: "10px",
-  border: "1px solid #d8e0db",
+};
+
+const uploadFieldLabelStyle: React.CSSProperties = {
+  fontSize: "15px",
+  color: "#071f14",
+};
+
+const uploadSelectStyle: React.CSSProperties = {
+  width: "100%",
+  maxWidth: "230px",
+  padding: "12px 14px",
+  borderRadius: "12px",
+  border: "1px solid #d8c8a3",
   background: "#ffffff",
+  color: "#071f14",
+  fontSize: "15px",
+  fontWeight: 600,
+};
+
+const filePickerRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  minWidth: 0,
 };
 
 const fileInputStyle: React.CSSProperties = {
-  display: "block",
-  marginTop: "8px",
+  width: "100%",
+  maxWidth: "320px",
+  fontSize: "14px",
+  color: "#31443a",
+};
+
+const fileHintStyle: React.CSSProperties = {
+  color: "#5f6b64",
+  fontSize: "13px",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
 };
 
 const primaryButtonStyle: React.CSSProperties = {
-  padding: "13px 18px",
-  borderRadius: "999px",
+  minWidth: "180px",
+  alignSelf: "stretch",
+  padding: "14px 22px",
+  borderRadius: "18px",
   border: "1px solid #003c25",
-  background: "#00642f",
+  background: "#006f35",
   color: "#ffffff",
-  fontWeight: 800,
+  fontWeight: 850,
+  fontSize: "16px",
   cursor: "pointer",
+  boxShadow: "0 12px 24px rgba(0, 79, 38, 0.18)",
 };
 
 const supportCardStyle: React.CSSProperties = {
   ...cardStyle,
   background: "linear-gradient(135deg, #f1f9f2, #ffffff)",
-  display: "flex",
-  justifyContent: "space-between",
+  display: "grid",
+  gridTemplateColumns: "56px minmax(0, 1fr) auto",
   alignItems: "center",
-  gap: "16px",
+  gap: "18px",
+  padding: "24px",
+};
+
+const supportIconStyle: React.CSSProperties = {
+  width: "56px",
+  height: "56px",
+  borderRadius: "18px",
+  background: "#e7f3ea",
+  color: "#21843b",
+  display: "grid",
+  placeItems: "center",
+};
+
+const supportContentStyle: React.CSSProperties = {
+  minWidth: 0,
 };
 
 const contactButtonStyle: React.CSSProperties = {
-  padding: "12px 18px",
-  borderRadius: "10px",
+  padding: "14px 22px",
+  borderRadius: "14px",
   background: "#00462b",
   color: "#ffffff",
   textDecoration: "none",
-  fontWeight: 800,
+  fontWeight: 850,
+  whiteSpace: "nowrap",
+  boxShadow: "0 10px 22px rgba(0, 70, 43, 0.16)",
 };
 
-const pageFooterStyle: React.CSSProperties = {
-  textAlign: "center",
-  color: "#607168",
-  padding: "8px 0 28px",
-};
 
 const mutedStyle: React.CSSProperties = {
   color: "#5f6b64",
