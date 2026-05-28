@@ -679,13 +679,45 @@ function getFriendlyStatusMessage(job: MemberJob) {
 }
 
 function formatEstimate(job: MemberJob) {
+  const publicStatus = formatPublicStatus(job.public_status);
+
+  const estimatePendingStatuses = [
+    "Application Received",
+    "Site Visit Fee Needed",
+    "Site Visit Scheduling",
+    "Estimate In Progress",
+  ];
+
+  if (estimatePendingStatuses.includes(publicStatus)) {
+    return "Pending";
+  }
+
   if (job.estimate_amount === null) return "Pending";
-  if (Number(job.estimate_amount) === 0) return "Not Required";
+
+  if (Number(job.estimate_amount) === 0) {
+    return "Not Required";
+  }
+
   return `$${Number(job.estimate_amount).toFixed(2)}`;
 }
 
 function formatDeposit(job: MemberJob) {
-  if (Number(job.deposit_required ?? 0) === 0) return "Not Required";
+  const publicStatus = formatPublicStatus(job.public_status);
+
+  const estimatePendingStatuses = [
+    "Application Received",
+    "Site Visit Fee Needed",
+    "Site Visit Scheduling",
+    "Estimate In Progress",
+  ];
+
+  if (estimatePendingStatuses.includes(publicStatus)) {
+    return "Pending";
+  }
+
+  if (Number(job.deposit_required ?? 0) === 0) {
+    return "Not Required";
+  }
 
   return `$${Number(job.deposit_received ?? 0).toFixed(2)} / $${Number(
     job.deposit_required ?? 0
