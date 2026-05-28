@@ -251,22 +251,24 @@ export default function MemberAccessPage({
             <span style={navIconStyle}>⌂</span> Overview
           </a>
           <a href="#documents" style={navItemStyle}>
-            <span style={navIconStyle}>□</span> Documents
+            <span style={navIconStyle}>▰</span> Documents
           </a>
           <a href="#uploads" style={navItemStyle}>
-            <span style={navIconStyle}>⇧</span> Uploads
-          </a>
-          <a href="#help" style={navItemStyle}>
-            <span style={navIconStyle}>?</span> Help
+            <span style={navIconStyle}>☁↑</span> Uploads
           </a>
         </nav>
 
         <div style={sideHelpCardStyle}>
           <div style={sideHelpIconStyle}>☏</div>
-          <h3 style={{ margin: "8px 0" }}>Need Help?</h3>
-          <p style={{ margin: 0, lineHeight: 1.5 }}>
-            We are here to help. Please contact OMEC with any questions.
+          <h3 style={sideHelpTitleStyle}>Need Help?</h3>
+          <p style={sideHelpTextStyle}>
+            Our team is here to help.<br />
+            Please reach out with<br />
+            any questions.
           </p>
+          <a href="mailto:office@oneidamadison.com" style={sideHelpButtonStyle}>
+            Contact Us
+          </a>
         </div>
 
         <div style={sidebarFooterStyle}>
@@ -494,11 +496,6 @@ function BrandBlock() {
         height={150}
         style={brandLogoStyle}
       />
-      <h2 style={brandTitleStyle}>
-        Oneida-Madison<br />
-        Electric Cooperative, Inc.
-      </h2>
-      <div style={estStyle}>Est. 1942</div>
     </div>
   );
 }
@@ -756,11 +753,8 @@ const brandBlockStyle: React.CSSProperties = {
 };
 
 const brandLogoStyle: React.CSSProperties = {
-  borderRadius: "999px",
-  border: "3px solid rgba(255,255,255,0.8)",
-  background: "#fffaf0",
   objectFit: "contain",
-  boxShadow: "0 20px 50px rgba(0,0,0,0.28)",
+  filter: "drop-shadow(0 18px 34px rgba(0,0,0,0.28))",
 };
 
 const brandTitleStyle: React.CSSProperties = {
@@ -796,22 +790,51 @@ const activeNavStyle: React.CSSProperties = {
 };
 
 const navIconStyle: React.CSSProperties = {
-  width: "22px",
+  width: "28px",
   display: "inline-grid",
   placeItems: "center",
+  fontSize: "22px",
+  lineHeight: 1,
 };
 
 const sideHelpCardStyle: React.CSSProperties = {
   marginTop: "42px",
-  padding: "22px",
+  padding: "28px 20px",
   border: "1px solid rgba(255,255,255,0.24)",
-  borderRadius: "18px",
+  borderRadius: "22px",
   textAlign: "center",
-  background: "rgba(255,255,255,0.06)",
+  background: "rgba(0, 38, 24, 0.28)",
+  boxShadow: "inset 0 0 0 1px rgba(80, 180, 100, 0.18)",
+  backdropFilter: "blur(2px)",
 };
 
 const sideHelpIconStyle: React.CSSProperties = {
-  fontSize: "32px",
+  fontSize: "34px",
+  marginBottom: "14px",
+};
+
+const sideHelpTitleStyle: React.CSSProperties = {
+  margin: "0 0 14px",
+  fontSize: "24px",
+  fontWeight: 900,
+};
+
+const sideHelpTextStyle: React.CSSProperties = {
+  margin: "0 0 22px",
+  lineHeight: 1.55,
+  fontSize: "16px",
+  fontWeight: 600,
+};
+
+const sideHelpButtonStyle: React.CSSProperties = {
+  display: "block",
+  color: "#ffffff",
+  textDecoration: "none",
+  border: "1px solid rgba(78, 190, 95, 0.55)",
+  borderRadius: "10px",
+  padding: "12px 16px",
+  fontWeight: 800,
+  background: "rgba(0, 45, 27, 0.22)",
 };
 
 const sidebarFooterStyle: React.CSSProperties = {
