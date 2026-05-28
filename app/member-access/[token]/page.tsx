@@ -282,7 +282,7 @@ export default function MemberAccessPage({
         <header id="overview" style={heroStyle}>
           <div>
             <p style={welcomeStyle}>Welcome,</p>
-            <h1 style={titleStyle}>Your Service Request</h1>
+            <h1 style={titleStyle}>{getFirstName(selectedJob.applicant_name)}'s Service Request</h1>
             <p style={subtitleStyle}>Here is the latest update on your project.</p>
           </div>
           <div style={heroArtStyle} />
@@ -329,7 +329,7 @@ export default function MemberAccessPage({
               <div key={step.label} style={trackStepStyle}>
                 {index < timeline.length - 1 && <div style={trackLineStyle} />}
                 <div style={getTrackCircleStyle(step.status)}>
-                  {getTrackSymbol(step.status)}
+                  {getTrackSymbol(step.status, step.label)}
                 </div>
                 <div style={trackLabelStyle}>{step.label}</div>
                 <div style={trackDetailStyle}>{step.detail || getStatusWord(step.status)}</div>
@@ -346,7 +346,9 @@ export default function MemberAccessPage({
 
         <section style={twoColumnStyle}>
           <div style={metricCardStyle}>
-            <div style={metricIconStyle}>$</div>
+            <div style={metricIconStyle}>
+              <ReceiptIcon />
+            </div>
             <div>
               <div style={metricLabelStyle}>Estimate</div>
               <div style={metricValueStyle}>{formatEstimate(selectedJob)}</div>
@@ -355,7 +357,9 @@ export default function MemberAccessPage({
           </div>
 
           <div style={metricCardStyle}>
-            <div style={metricIconStyle}>▣</div>
+            <div style={metricIconStyle}>
+              <CircleDollarSignIcon />
+            </div>
             <div>
               <div style={metricLabelStyle}>Deposit</div>
               <div style={metricValueStyle}>{formatDeposit(selectedJob)}</div>
@@ -485,6 +489,71 @@ export default function MemberAccessPage({
   );
 }
 
+function getFirstName(name: string | null | undefined) {
+  const cleaned = (name || "").trim();
+
+  if (!cleaned) {
+    return "Your";
+  }
+
+  return cleaned.split(/\s+/)[0];
+}
+
+function HourglassIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 3h12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M6 21h12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M7 3c0 4.2 2.4 6.1 5 9-2.6 2.9-5 4.8-5 9" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M17 3c0 4.2-2.4 6.1-5 9 2.6 2.9 5 4.8 5 9" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 7h6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M9 17h6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function HardHatIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 18h18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M5 18v-2a7 7 0 0 1 14 0v2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 9v5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M15 9v5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M8 18v2h8v-2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function BookmarkCheckIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 4.8A2.8 2.8 0 0 1 8.8 2h6.4A2.8 2.8 0 0 1 18 4.8V21l-6-3-6 3V4.8Z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 10.5l2 2 4-4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ReceiptIcon() {
+  return (
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 3h12v18l-2-1.2-2 1.2-2-1.2-2 1.2-2-1.2L6 21V3Z" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 7h6" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M9 11h6" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M9 15h4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CircleDollarSignIcon() {
+  return (
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.1" />
+      <path d="M12 6.5v11" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M15 8.8c-.7-.7-1.7-1-3-1-1.6 0-2.8.8-2.8 2.1 0 1.4 1.2 1.9 2.8 2.2 1.9.4 3 .9 3 2.3 0 1.3-1.2 2.1-3 2.1-1.4 0-2.6-.4-3.4-1.2" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function HomeIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -584,54 +653,14 @@ function buildMemberTimeline(job: MemberJob | null): TimelineStep[] {
       detail: siteVisitComplete ? formatShortDate(job.site_visit_at) : "Pending",
     },
     {
-      label:
-        publicStatus === "Estimate In Progress"
-          ? "Estimate"
-          : estimateNotRequired
-          ? "Estimate N/A"
-          : "Estimate",
-      status:
-        publicStatus === "Estimate In Progress"
-          ? "current"
-          : estimateNotRequired
-          ? "complete"
-          : estimateSentOrBeyond
-          ? "complete"
-          : "pending",
-      detail:
-        publicStatus === "Estimate In Progress"
-          ? "Pending"
-          : estimateNotRequired
-          ? "Not required"
-          : getStatusWord(estimateSentOrBeyond ? "complete" : "pending"),
+      label: estimateNotRequired ? "Estimate N/A" : "Estimate",
+      status: estimateNotRequired ? "not_required" : estimateSentOrBeyond ? "complete" : publicStatus === "Estimate In Progress" ? "current" : "pending",
+      detail: estimateNotRequired ? "Not required" : getStatusWord(estimateSentOrBeyond ? "complete" : "pending"),
     },
     {
-      label:
-        publicStatus === "Estimate In Progress"
-          ? "Deposit"
-          : depositNotRequired
-          ? "Deposit N/A"
-          : "Deposit",
-      status:
-        publicStatus === "Estimate In Progress"
-          ? "pending"
-          : depositNotRequired
-          ? "complete"
-          : Number(job.deposit_received ?? 0) >= Number(job.deposit_required ?? 0)
-          ? "complete"
-          : publicStatus === "Awaiting Deposit"
-          ? "current"
-          : "pending",
-      detail:
-        publicStatus === "Estimate In Progress"
-          ? "Pending"
-          : depositNotRequired
-          ? "Not required"
-          : getStatusWord(
-              Number(job.deposit_received ?? 0) >= Number(job.deposit_required ?? 0)
-                ? "complete"
-                : "pending"
-            ),
+      label: depositNotRequired ? "Deposit N/A" : "Deposit",
+      status: depositNotRequired ? "not_required" : Number(job.deposit_received ?? 0) >= Number(job.deposit_required ?? 0) ? "complete" : publicStatus === "Awaiting Deposit" ? "current" : "pending",
+      detail: depositNotRequired ? "Not required" : getStatusWord(Number(job.deposit_received ?? 0) >= Number(job.deposit_required ?? 0) ? "complete" : "pending"),
     },
     {
       label: "Construction",
@@ -679,11 +708,30 @@ function formatPublicStatus(value: string | null | undefined) {
   return map[normalized] || normalized;
 }
 
-function getTrackSymbol(status: TimelineStep["status"]) {
-  if (status === "complete") return "✓";
-  if (status === "current") return "●";
-  if (status === "not_required") return "—";
-  return "○";
+function getTrackSymbol(status: TimelineStep["status"], label?: string) {
+  const normalizedLabel = (label || "").toLowerCase();
+
+  if (status === "complete" && normalizedLabel.includes("completed")) {
+    return <BookmarkCheckIcon />;
+  }
+
+  if (status === "complete") {
+    return "✓";
+  }
+
+  if (status === "current" && normalizedLabel.includes("construction")) {
+    return <HardHatIcon />;
+  }
+
+  if (status === "current") {
+    return <HourglassIcon />;
+  }
+
+  if (status === "not_required") {
+    return "✓";
+  }
+
+  return <HourglassIcon />;
 }
 
 function getStatusWord(status: TimelineStep["status"]) {
@@ -733,7 +781,6 @@ function formatEstimate(job: MemberJob) {
     "Application Received",
     "Site Visit Fee Needed",
     "Site Visit Scheduling",
-    "Estimate In Progress",
   ];
 
   if (
@@ -761,7 +808,6 @@ function formatDeposit(job: MemberJob) {
     "Application Received",
     "Site Visit Fee Needed",
     "Site Visit Scheduling",
-    "Estimate In Progress",
   ];
 
   if (
