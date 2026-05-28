@@ -19,6 +19,7 @@ type MemberJob = {
   state: string | null;
   postal_code: string | null;
   public_status: string;
+  estimate_status: string | null;
   site_visit_at: string | null;
   estimate_amount: number | null;
   deposit_required: number | null;
@@ -663,8 +664,15 @@ function getFriendlyStatusMessage(job: MemberJob) {
     return "A deposit is needed before the project can move forward.";
   }
 
+  if (
+    status.includes("Estimate") &&
+    job.estimate_status === "sent"
+  ) {
+    return "Estimate sent. Please review, approve, and return the signed estimate.";
+  }
+
   if (status.includes("Estimate")) {
-    return "OMEC is preparing or reviewing the estimate for your project.";
+    return "Estimate in progress. OMEC is preparing your estimate.";
   }
 
   if (status.includes("Site Visit")) {
@@ -685,14 +693,18 @@ function formatEstimate(job: MemberJob) {
     "Application Received",
     "Site Visit Fee Needed",
     "Site Visit Scheduling",
-    "Estimate In Progress",
   ];
 
-  if (estimatePendingStatuses.includes(publicStatus)) {
+  if (
+    estimatePendingStatuses.includes(publicStatus) &&
+    job.estimate_status !== "sent"
+  ) {
     return "Pending";
   }
 
-  if (job.estimate_amount === null) return "Pending";
+  if (job.estimate_amount === null) {
+    return "Pending";
+  }
 
   if (Number(job.estimate_amount) === 0) {
     return "Not Required";
@@ -708,10 +720,12 @@ function formatDeposit(job: MemberJob) {
     "Application Received",
     "Site Visit Fee Needed",
     "Site Visit Scheduling",
-    "Estimate In Progress",
   ];
 
-  if (estimatePendingStatuses.includes(publicStatus)) {
+  if (
+    estimatePendingStatuses.includes(publicStatus) &&
+    job.estimate_status !== "sent"
+  ) {
     return "Pending";
   }
 
