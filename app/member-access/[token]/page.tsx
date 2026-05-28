@@ -282,7 +282,7 @@ export default function MemberAccessPage({
         <header id="overview" style={heroStyle}>
           <div>
             <p style={welcomeStyle}>Welcome,</p>
-            <h1 style={titleStyle}>{getFirstName(selectedJob.applicant_name)}'s Service Request</h1>
+            <h1 style={titleStyle}>{getFirstName(selectedJob.applicant_name)}&apos;s Service Request</h1>
             <p style={subtitleStyle}>Here is the latest update on your project.</p>
           </div>
           <div style={heroArtStyle} />
