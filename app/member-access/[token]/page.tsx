@@ -1459,6 +1459,17 @@ const filePickerRowStyle: React.CSSProperties = {
   minWidth: 0,
 };
 
+const inputStyle: React.CSSProperties = {
+  display: "block",
+  width: "100%",
+  marginTop: "8px",
+  padding: "10px",
+  borderRadius: "10px",
+  border: "1px solid #d8e0db",
+  background: "#ffffff",
+  color: "#071f14",
+};
+
 const fileInputStyle: React.CSSProperties = {
   width: "100%",
   maxWidth: "320px",
