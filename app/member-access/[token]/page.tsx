@@ -751,7 +751,7 @@ const shellStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "280px minmax(0, 1fr)",
   background: "#f6f8f5",
-  color: "#ffffff",
+  color: "#071f14",
   fontFamily: "Arial, sans-serif",
 };
 
@@ -777,6 +777,7 @@ const contentStyle: React.CSSProperties = {
 const brandBlockStyle: React.CSSProperties = {
   textAlign: "center",
   marginBottom: "28px",
+  color: "#ffffff",
 };
 
 const brandLogoStyle: React.CSSProperties = {
@@ -803,7 +804,6 @@ const navStyle: React.CSSProperties = {
 };
 
 const navItemStyle: React.CSSProperties = {
-  color: "#ffffff",
   color: "#ffffff",
   textDecoration: "none",
   display: "flex",
@@ -846,14 +846,13 @@ const sideHelpIconStyle: React.CSSProperties = {
 };
 
 const sideHelpTitleStyle: React.CSSProperties = {
-  color: "#ffffff",
   margin: "0 0 14px",
   fontSize: "24px",
   fontWeight: 900,
+  color: "#ffffff",
 };
 
 const sideHelpTextStyle: React.CSSProperties = {
-  color: "#ffffff",
   margin: "0 0 22px",
   lineHeight: 1.55,
   fontSize: "16px",
@@ -865,7 +864,7 @@ const sideHelpButtonStyle: React.CSSProperties = {
   display: "block",
   color: "#ffffff",
   textDecoration: "none",
-  border: "1px solid rgba(78, 190, 95, 0.65)",
+  border: "1px solid rgba(255,255,255,0.65)",
   borderRadius: "10px",
   padding: "12px 16px",
   fontWeight: 800,
@@ -960,7 +959,7 @@ const infoLabelStyle: React.CSSProperties = {
 
 const infoValueStyle: React.CSSProperties = {
   fontWeight: 800,
-  color: "#ffffff",
+  color: "#071f14",
 };
 
 const sectionHeaderStyle: React.CSSProperties = {
@@ -974,7 +973,7 @@ const sectionHeaderStyle: React.CSSProperties = {
 const sectionTitleStyle: React.CSSProperties = {
   fontSize: "22px",
   margin: "0 0 12px",
-  color: "#ffffff",
+  color: "#071f14",
 };
 
 const updatedBadgeStyle: React.CSSProperties = {
@@ -1056,7 +1055,7 @@ const metricIconStyle: React.CSSProperties = {
 };
 
 const metricLabelStyle: React.CSSProperties = {
-  color: "rgba(255,255,255,0.88)",
+  color: "#5f6b64",
   fontWeight: 700,
 };
 
@@ -1211,12 +1210,12 @@ const contactButtonStyle: React.CSSProperties = {
 
 const pageFooterStyle: React.CSSProperties = {
   textAlign: "center",
-  color: "rgba(255,255,255,0.82)",
+  color: "#607168",
   padding: "8px 0 28px",
 };
 
 const mutedStyle: React.CSSProperties = {
-  color: "rgba(255,255,255,0.88)",
+  color: "#5f6b64",
   fontSize: "14px",
 };
 
@@ -1229,7 +1228,7 @@ const emptyStateStyle: React.CSSProperties = {
   border: "1px dashed #ccd8d0",
   borderRadius: "14px",
   background: "#fbfdfb",
-  color: "rgba(255,255,255,0.88)",
+  color: "#5f6b64",
 };
 
 const alertStyle: React.CSSProperties = {
