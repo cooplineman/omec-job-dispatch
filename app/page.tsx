@@ -111,6 +111,7 @@ type WorkflowUpdates = {
   p_construction_status?: string | null;
   p_inspection_received?: boolean | null;
   p_inspection_received_at?: string | null;
+  p_final_bill_amount?: number | null;
   p_final_payment_received?: boolean | null;
   p_energized_at?: string | null;
 };
@@ -164,6 +165,7 @@ export default function Home() {
   const [estimateAmount, setEstimateAmount] = useState("0");
   const [depositRequired, setDepositRequired] = useState("0");
   const [depositReceived, setDepositReceived] = useState("0");
+  const [finalPaymentRefund, setFinalPaymentRefund] = useState("0");
   const [constructionStatus, setConstructionStatus] = useState("pending");
 const [constructionStatusNote, setConstructionStatusNote] = useState("");
 
@@ -401,6 +403,7 @@ const [constructionStatusNote, setConstructionStatusNote] = useState("");
       );
       setDepositRequired(String(detailData.deposit_required ?? 0));
       setDepositReceived(String(detailData.deposit_received ?? 0));
+      setFinalPaymentRefund(String(detailData.final_bill_amount ?? 0));
       setConstructionStatus(detailData.construction_status || "pending");
 setConstructionStatusNote("");
 
@@ -612,6 +615,7 @@ setConstructionStatusNote("");
       p_construction_status: null,
       p_inspection_received: null,
       p_inspection_received_at: null,
+      p_final_bill_amount: null,
       p_final_payment_received: null,
       p_energized_at: null,
     });
@@ -739,6 +743,7 @@ ${accessLink}`);
       p_construction_status: updates.p_construction_status ?? null,
       p_inspection_received: updates.p_inspection_received ?? null,
       p_inspection_received_at: updates.p_inspection_received_at ?? null,
+      p_final_bill_amount: updates.p_final_bill_amount ?? null,
       p_final_payment_received: updates.p_final_payment_received ?? null,
       p_energized_at: updates.p_energized_at ?? null,
     });
@@ -932,7 +937,19 @@ ${accessLink}`);
     }
 
     if (actionId === "final_payment_received") {
-      return { p_final_payment_received: true };
+      const finalAmount =
+        finalPaymentRefund.trim() === "" ? 0 : parseMoney(finalPaymentRefund);
+
+      if (finalAmount === null) {
+        window.alert("Cannot mark final payment/refund complete: enter a valid Final Payment / Refund amount.");
+        setMessage("Cannot mark final payment/refund complete: valid amount required.");
+        return null;
+      }
+
+      return {
+        p_final_bill_amount: finalAmount,
+        p_final_payment_received: true,
+      };
     }
 
     if (actionId === "energized_closed") {
@@ -1355,7 +1372,8 @@ ${accessLink}`);
                 <Detail label="Construction" value={formatDisplayLabel(selectedJobDetail.construction_status)} />
                 <Detail label="Inspection Received" value={selectedJobDetail.inspection_received ? "Yes" : "No"} />
                 <Detail label="Inspection Date" value={formatDateTime(selectedJobDetail.inspection_received_at)} />
-                <Detail label="Final Payment" value={selectedJobDetail.final_payment_received ? "Yes" : "No"} />
+                <Detail label="Final Payment / Refund" value={`$${formatMoney(selectedJobDetail.final_bill_amount)}`} />
+                <Detail label="Final Payment Complete" value={selectedJobDetail.final_payment_received ? "Yes" : "No"} />
                 <Detail label="Energized" value={formatDateTime(selectedJobDetail.energized_at)} />
               </div>
             </div>
@@ -1419,6 +1437,7 @@ ${accessLink}`);
                   <FormInput label="Estimate Amount" value={estimateAmount} onChange={setEstimateAmount} />
                   <FormInput label="Deposit Required" value={depositRequired} onChange={setDepositRequired} />
                   <FormInput label="Deposit Received" value={depositReceived} onChange={setDepositReceived} />
+                  <FormInput label="Final Payment / Refund" value={finalPaymentRefund} onChange={setFinalPaymentRefund} />
                 </div>
 
                 <button
