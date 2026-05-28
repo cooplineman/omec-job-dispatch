@@ -1811,10 +1811,10 @@ const staffAuthLogoStyle: React.CSSProperties = {
   width: "96px",
   height: "96px",
   objectFit: "contain",
-  borderRadius: "999px",
+  borderRadius: "12px",
   background: "#ffffff",
   padding: "8px",
-  border: "2px solid #d8c8a3",
+  border: "2px solid #e1e7e2",
 };
 
 const staffAuthFormStyle: React.CSSProperties = {
@@ -1859,10 +1859,10 @@ const staffLogoStyle: React.CSSProperties = {
   width: "78px",
   height: "78px",
   objectFit: "contain",
-  borderRadius: "999px",
+  borderRadius: "12px",
   background: "#ffffff",
   padding: "6px",
-  border: "2px solid #d8c8a3",
+  border: "2px solid #e1e7e2",
   boxShadow: "0 8px 20px rgba(20, 53, 40, 0.14)",
 };
 
@@ -1984,7 +1984,7 @@ const staffPrimaryButtonStyle: React.CSSProperties = {
   background: "#21843b",
   color: "#ffffff",
   border: "1px solid #16682d",
-  borderRadius: "999px",
+  borderRadius: "12px",
   fontWeight: 850,
   boxShadow: "0 10px 22px rgba(33,132,59,0.18)",
 };
@@ -1994,9 +1994,9 @@ const staffSecondaryButtonStyle: React.CSSProperties = {
   padding: "11px 16px",
   cursor: "pointer",
   background: "#ffffff",
-  color: "#143528",
-  border: "1px solid #c89b3c",
-  borderRadius: "999px",
+  color: "#071f14",
+  border: "1px solid #d6e9da",
+  borderRadius: "12px",
   fontWeight: 800,
 };
 
@@ -2005,9 +2005,9 @@ const staffSmallButtonStyle: React.CSSProperties = {
   padding: "8px 12px",
   cursor: "pointer",
   background: "#f4f7f5",
-  color: "#143528",
+  color: "#071f14",
   border: "1px solid #d8e3dc",
-  borderRadius: "999px",
+  borderRadius: "12px",
   fontWeight: 800,
 };
 
@@ -2016,7 +2016,7 @@ const staffFullButtonStyle: React.CSSProperties = {
   padding: "11px 14px",
   cursor: "pointer",
   background: "#ffffff",
-  color: "#143528",
+  color: "#071f14",
   border: "1px solid #d8e3dc",
   borderRadius: "14px",
   fontWeight: 800,
@@ -2060,7 +2060,7 @@ const staffSelectedJobTitleStyle: React.CSSProperties = {
 const staffStageBadgeStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
-  borderRadius: "999px",
+  borderRadius: "12px",
   padding: "9px 14px",
   background: "#e7f3ea",
   border: "1px solid #d6e9da",
@@ -2076,7 +2076,7 @@ const staffWorkflowCardStyle: React.CSSProperties = {
 
 const staffNextActionCardStyle: React.CSSProperties = {
   ...staffFullWidthCardStyle,
-  background: "linear-gradient(135deg, #fffaf0, #ffffff)",
+  background: "linear-gradient(135deg, #ffffff, #ffffff)",
   border: "1px solid #e1e7e2",
 };
 
@@ -2147,7 +2147,7 @@ const staffJobMetaStyle: React.CSSProperties = {
 };
 
 const staffJobNextActionStyle: React.CSSProperties = {
-  color: "#143528",
+  color: "#071f14",
   fontSize: "13px",
   fontWeight: 700,
 };
@@ -2196,7 +2196,7 @@ const staffDropdownTitleStyle: React.CSSProperties = {
   display: "block",
   fontSize: "20px",
   fontWeight: 850,
-  color: "#143528",
+  color: "#071f14",
 };
 
 const staffDropdownSubtitleStyle: React.CSSProperties = {
@@ -2210,7 +2210,7 @@ const staffDropdownSubtitleStyle: React.CSSProperties = {
 const staffDropdownChevronStyle: React.CSSProperties = {
   width: "36px",
   height: "36px",
-  borderRadius: "999px",
+  borderRadius: "12px",
   display: "grid",
   placeItems: "center",
   background: "#e7f3ea",
@@ -2456,8 +2456,8 @@ function ActionButton({ children, disabled, onClick }: { children: React.ReactNo
         cursor: disabled ? "not-allowed" : "pointer",
         background: disabled ? "#cccccc" : "#21843b",
         color: disabled ? "#666666" : "#ffffff",
-        border: "1px solid #143528",
-        borderRadius: "999px",
+        border: "1px solid #071f14",
+        borderRadius: "12px",
       }}
     >
       {children}
@@ -2466,27 +2466,38 @@ function ActionButton({ children, disabled, onClick }: { children: React.ReactNo
 }
 
 function TableHeader({ children }: { children: React.ReactNode }) {
-  return <th style={{ borderBottom: "2px solid #ccc", textAlign: "left", padding: "10px", background: "#edf6ef", color: "#143528" }}>{children}</th>;
+  return <th style={{ borderBottom: "2px solid #ccc", textAlign: "left", padding: "10px", background: "#edf6ef", color: "#071f14" }}>{children}</th>;
 }
 
 function TableCell({ children }: { children: React.ReactNode }) {
   return <td style={{ borderBottom: "1px solid #eeeeee", padding: "10px", verticalAlign: "top", color: "#111111" }}>{children}</td>;
 }
 
-const mainStyle: React.CSSProperties = { padding: "40px", fontFamily: "Arial, sans-serif", background: "transparent", color: "#111111", minHeight: "100vh" };
+const appFontFamily =
+  'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif';
+
+const headingFontStyle: React.CSSProperties = {
+  fontFamily: appFontFamily,
+  fontWeight: 800,
+  letterSpacing: "-0.3px",
+  color: "#071f14",
+};
+
+
+const mainStyle: React.CSSProperties = { padding: "40px", fontFamily: appFontFamily, background: "#f6f8f5", color: "#111111", minHeight: "100vh" };
 const brandHeaderStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" };
-const logoStyle: React.CSSProperties = { width: "84px", height: "84px", objectFit: "contain", borderRadius: "999px", background: "#ffffff", padding: "6px", border: "2px solid #d8c8a3", boxShadow: "0 8px 20px rgba(20, 53, 40, 0.18)" };
+const logoStyle: React.CSSProperties = { width: "84px", height: "84px", objectFit: "contain", borderRadius: "12px", background: "#ffffff", padding: "6px", border: "2px solid #e1e7e2", boxShadow: "0 8px 20px rgba(20, 53, 40, 0.18)" };
 const topBarStyle: React.CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" };
 const messageStyle: React.CSSProperties = { padding: "12px", border: "1px solid #e1e7e2", background: "#ffffff", color: "#111111", borderRadius: "12px" };
 const dashboardGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginTop: "24px" };
-const dashboardCardStyle: React.CSSProperties = { border: "1px solid #e1e7e2", padding: "20px", background: "#ffffff", color: "#111111", borderRadius: "14px" };
+const dashboardCardStyle: React.CSSProperties = { border: "1px solid #e1e7e2", padding: "20px", background: "#ffffff", color: "#111111", borderRadius: "12px" };
 const sectionStyle: React.CSSProperties = { marginTop: "40px", maxWidth: "1000px", background: "#ffffff", color: "#111111" };
-const panelStyle: React.CSSProperties = { marginTop: "16px", padding: "16px", border: "1px solid #e1e7e2", background: "#ffffff", borderRadius: "14px" };
+const panelStyle: React.CSSProperties = { marginTop: "16px", padding: "16px", border: "1px solid #e1e7e2", background: "#ffffff", borderRadius: "12px" };
 const emptyStateStyle: React.CSSProperties = { padding: "16px", border: "1px dashed #999", background: "#ffffff", borderRadius: "12px" };
 const labelStyle: React.CSSProperties = { display: "block", marginTop: "12px", color: "#111111", fontWeight: 600 };
 const inputStyle: React.CSSProperties = { display: "block", width: "100%", padding: "8px", marginTop: "4px", background: "#ffffff", color: "#111111", border: "1px solid #e1e7e2", borderRadius: "10px" };
-const buttonStyle: React.CSSProperties = { marginTop: "16px", padding: "10px 16px", cursor: "pointer", background: "#21843b", color: "#ffffff", border: "1px solid #143528", borderRadius: "999px" };
-const secondaryButtonStyle: React.CSSProperties = { marginTop: "16px", padding: "10px 16px", cursor: "pointer", background: "#ffffff", color: "#143528", border: "1px solid #c89b3c", borderRadius: "999px" };
+const buttonStyle: React.CSSProperties = { marginTop: "16px", padding: "10px 16px", cursor: "pointer", background: "#21843b", color: "#ffffff", border: "1px solid #071f14", borderRadius: "12px" };
+const secondaryButtonStyle: React.CSSProperties = { marginTop: "16px", padding: "10px 16px", cursor: "pointer", background: "#ffffff", color: "#071f14", border: "1px solid #d6e9da", borderRadius: "12px" };
 const jobListHeaderRowStyle: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
@@ -2496,7 +2507,7 @@ const jobListHeaderRowStyle: React.CSSProperties = {
 };
 
 const buttonRowStyle: React.CSSProperties = { display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "16px" };
-const detailCardStyle: React.CSSProperties = { marginTop: "16px", padding: "16px", border: "1px solid #e1e7e2", background: "#ffffff", color: "#111111", borderRadius: "14px" };
+const detailCardStyle: React.CSSProperties = { marginTop: "16px", padding: "16px", border: "1px solid #e1e7e2", background: "#ffffff", color: "#111111", borderRadius: "12px" };
 const detailGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" };
 const noteCardStyle: React.CSSProperties = { padding: "12px", border: "1px solid #e1e7e2", background: "#ffffff", borderRadius: "12px" };
 const activityCardStyle: React.CSSProperties = { padding: "12px", border: "1px solid #e1e7e2", background: "#ffffff", borderRadius: "12px" };
@@ -2508,19 +2519,19 @@ const dropdownHeaderButtonStyle: React.CSSProperties = {
   gap: "16px",
   padding: "18px 20px",
   border: "1px solid #e1e7e2",
-  borderRadius: "14px",
+  borderRadius: "12px",
   background: "#ffffff",
-  color: "#111111",
+  color: "#071f14",
   cursor: "pointer",
   textAlign: "left",
-  boxShadow: "0 10px 24px rgba(20, 53, 40, 0.08)",
+  boxShadow: "0 8px 20px rgba(0,0,0,0.045)",
 };
 
 const dropdownTitleStyle: React.CSSProperties = {
   display: "block",
   fontSize: "22px",
   fontWeight: 800,
-  color: "#143528",
+  color: "#071f14",
 };
 
 const dropdownSubtitleStyle: React.CSSProperties = {
@@ -2532,14 +2543,14 @@ const dropdownSubtitleStyle: React.CSSProperties = {
 };
 
 const dropdownChevronStyle: React.CSSProperties = {
-  width: "36px",
-  height: "36px",
-  borderRadius: "999px",
+  width: "34px",
+  height: "34px",
+  borderRadius: "10px",
   display: "grid",
   placeItems: "center",
   background: "#edf6ef",
-  color: "#143528",
-  fontSize: "22px",
+  color: "#21843b",
+  fontSize: "20px",
   fontWeight: 900,
   flex: "0 0 auto",
 };
@@ -2548,7 +2559,7 @@ const dropdownPanelStyle: React.CSSProperties = {
   marginTop: "12px",
   padding: "16px",
   border: "1px solid #e1e7e2",
-  borderRadius: "14px",
+  borderRadius: "12px",
   background: "#ffffff",
 };
 const activityDetailsStyle: React.CSSProperties = { marginTop: "8px", padding: "10px", background: "#ffffff", border: "1px solid #ddd", fontSize: "13px", display: "grid", gap: "6px", borderRadius: "10px" };
@@ -2557,5 +2568,5 @@ const fileGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumn
 const fileCardStyle: React.CSSProperties = { border: "1px solid #e1e7e2", padding: "10px", background: "#ffffff", color: "#111111", borderRadius: "12px" };
 const thumbnailStyle: React.CSSProperties = { width: "100%", height: "140px", objectFit: "cover", border: "1px solid #ccc", marginBottom: "8px", background: "#ffffff", borderRadius: "10px" };
 const filePlaceholderStyle: React.CSSProperties = { height: "140px", border: "1px solid #ccc", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", background: "#ffffff", textAlign: "center", padding: "8px", color: "#111111", borderRadius: "10px" };
-const gateBadgeStyle: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: "8px", padding: "4px 10px", borderRadius: "999px", background: "#ffffff", border: "1px solid #e1e7e2", whiteSpace: "normal" };
+const gateBadgeStyle: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: "8px", padding: "4px 10px", borderRadius: "12px", background: "#ffffff", border: "1px solid #e1e7e2", whiteSpace: "normal" };
 const tableStyle: React.CSSProperties = { width: "100%", borderCollapse: "collapse", marginTop: "12px", background: "#ffffff", color: "#111111" };
