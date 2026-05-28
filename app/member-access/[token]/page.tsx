@@ -670,7 +670,11 @@ function buildMemberTimeline(job: MemberJob | null): TimelineStep[] {
     {
       label: "Inspection",
       status: inspectionReached ? (serviceEnergized ? "complete" : "current") : "pending",
-      detail: inspectionReached ? "In review" : "Pending",
+      detail: inspectionReached
+        ? publicStatus === "Inspection Pending"
+          ? "Waiting on inspection"
+          : "In review"
+        : "Pending",
     },
     {
       label: "Completed",
@@ -761,6 +765,10 @@ function getFriendlyStatusMessage(job: MemberJob) {
 
   if (status.includes("Estimate")) {
     return "Estimate in progress. OMEC is preparing your estimate.";
+  }
+
+  if (status.includes("Inspection")) {
+    return "Waiting on inspection. OMEC is waiting for inspection before final completion.";
   }
 
   if (status.includes("Site Visit")) {
