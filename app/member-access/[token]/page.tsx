@@ -276,7 +276,7 @@ export default function MemberAccessPage({
             Contact Us
           </a>
         </div>
-</aside>
+      </aside>
 
       <section style={contentStyle}>
         <div style={secureBadgeStyle}>▣ Secure Member Access</div>
@@ -650,8 +650,10 @@ function buildMemberTimeline(job: MemberJob | null): TimelineStep[] {
   ].includes(publicStatus);
 
   const constructionComplete = ["Inspection Pending", "Final Billing", "Service Energized"].includes(publicStatus);
-  const inspectionReached = ["Inspection Pending", "Final Billing", "Service Energized"].includes(publicStatus);
+  const inspectionPending = publicStatus === "Inspection Pending";
+  const finalBilling = publicStatus === "Final Billing";
   const serviceEnergized = publicStatus === "Service Energized";
+  const finalPaymentComplete = Boolean(job.final_payment_received) || serviceEnergized;
 
   return [
     { label: "Received", status: "complete", detail: formatShortDate(job.created_at) },
@@ -668,12 +670,12 @@ function buildMemberTimeline(job: MemberJob | null): TimelineStep[] {
     {
       label: estimateNotRequired ? "Estimate N/A" : "Estimate",
       status: estimateNotRequired ? "not_required" : estimateSentOrBeyond ? "complete" : publicStatus === "Estimate In Progress" ? "current" : "pending",
-      detail: estimateNotRequired ? "Not required" : getStatusWord(estimateSentOrBeyond ? "complete" : "pending"),
+      detail: estimateNotRequired ? "Not required" : getStatusWord(estimateSentOrBeyond ? "complete" : publicStatus === "Estimate In Progress" ? "current" : "pending"),
     },
     {
       label: depositNotRequired ? "Deposit N/A" : "Deposit",
       status: depositNotRequired ? "not_required" : Number(job.deposit_received ?? 0) >= Number(job.deposit_required ?? 0) ? "complete" : publicStatus === "Awaiting Deposit" ? "current" : "pending",
-      detail: depositNotRequired ? "Not required" : getStatusWord(Number(job.deposit_received ?? 0) >= Number(job.deposit_required ?? 0) ? "complete" : "pending"),
+      detail: depositNotRequired ? "Not required" : getStatusWord(Number(job.deposit_received ?? 0) >= Number(job.deposit_required ?? 0) ? "complete" : publicStatus === "Awaiting Deposit" ? "current" : "pending"),
     },
     {
       label: "Construction",
@@ -682,12 +684,13 @@ function buildMemberTimeline(job: MemberJob | null): TimelineStep[] {
     },
     {
       label: "Inspection",
-      status: inspectionReached ? (serviceEnergized ? "complete" : "current") : "pending",
-      detail: inspectionReached
-        ? publicStatus === "Inspection Pending"
-          ? "Waiting on inspection"
-          : "In review"
-        : "Pending",
+      status: serviceEnergized || finalBilling ? "complete" : inspectionPending ? "current" : "pending",
+      detail: inspectionPending ? "Waiting on inspection" : serviceEnergized || finalBilling ? "Complete" : "Pending",
+    },
+    {
+      label: "Final Payment / Refund",
+      status: finalPaymentComplete ? "complete" : finalBilling ? "current" : "pending",
+      detail: finalPaymentComplete ? "Complete" : finalBilling ? "Waiting on final payment" : "Pending",
     },
     {
       label: "Completed",
@@ -784,6 +787,10 @@ function getFriendlyStatusMessage(job: MemberJob) {
     return "Waiting on inspection. OMEC is waiting for inspection before final completion.";
   }
 
+  if (status.includes("Final Billing")) {
+    return getFinalPaymentRefundMessage(job);
+  }
+
   if (status.includes("Site Visit")) {
     return "A site visit is being scheduled or prepared.";
   }
@@ -848,14 +855,20 @@ function formatDeposit(job: MemberJob) {
 }
 
 function formatFinalPaymentRefund(job: MemberJob) {
-  if (!job.final_payment_received) {
-    return "Pending";
-  }
-
+  const publicStatus = formatPublicStatus(job.public_status);
   const finalAmount = Number(job.final_bill_amount ?? 0);
   const estimateAmount = Number(job.estimate_amount ?? 0);
 
-  if (estimateAmount > 0 && finalAmount < estimateAmount) {
+  const finalStageReached =
+    publicStatus === "Final Billing" ||
+    publicStatus === "Service Energized" ||
+    Boolean(job.final_payment_received);
+
+  if (!finalStageReached) {
+    return "Pending";
+  }
+
+  if (estimateAmount > 0 && finalAmount > 0 && finalAmount < estimateAmount) {
     return `$${Math.max(estimateAmount - finalAmount, 0).toFixed(2)} Refund`;
   }
 
@@ -863,19 +876,33 @@ function formatFinalPaymentRefund(job: MemberJob) {
     return `$${finalAmount.toFixed(2)}`;
   }
 
-  return "Complete";
+  if (job.final_payment_received) {
+    return "Complete";
+  }
+
+  return "Waiting";
 }
 
 function getFinalPaymentRefundMessage(job: MemberJob) {
-  if (!job.final_payment_received) {
-    return "Final billing pending";
-  }
-
+  const publicStatus = formatPublicStatus(job.public_status);
   const finalAmount = Number(job.final_bill_amount ?? 0);
   const estimateAmount = Number(job.estimate_amount ?? 0);
 
-  if (estimateAmount > 0 && finalAmount < estimateAmount) {
+  const finalStageReached =
+    publicStatus === "Final Billing" ||
+    publicStatus === "Service Energized" ||
+    Boolean(job.final_payment_received);
+
+  if (!finalStageReached) {
+    return "Final billing pending";
+  }
+
+  if (estimateAmount > 0 && finalAmount > 0 && finalAmount < estimateAmount) {
     return "Great news! Your job came in under estimate.";
+  }
+
+  if (!job.final_payment_received) {
+    return "Waiting on final payment";
   }
 
   if (estimateAmount > 0 && finalAmount > estimateAmount) {
@@ -1020,7 +1047,6 @@ const navIconStyle: React.CSSProperties = {
   lineHeight: 1,
 };
 
-
 const sideHelpCardStyle: React.CSSProperties = {
   marginTop: "42px",
   padding: "28px 20px",
@@ -1063,7 +1089,6 @@ const sideHelpButtonStyle: React.CSSProperties = {
   fontWeight: 800,
   background: "rgba(0, 45, 27, 0.28)",
 };
-
 
 const secureBadgeStyle: React.CSSProperties = {
   float: "right",
@@ -1439,4 +1464,3 @@ const loadingCardStyle: React.CSSProperties = {
   borderRadius: "18px",
   boxShadow: "0 14px 34px rgba(0,0,0,0.07)",
 };
-
