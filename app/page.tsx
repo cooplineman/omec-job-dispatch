@@ -2158,24 +2158,26 @@ const staffJobRowStyle: React.CSSProperties = {
   border: "1px solid #e1e7e2",
   background: "#ffffff",
   color: "#071f14",
-  borderRadius: "10px",
-  padding: "14px",
+  borderRadius: "8px",
+  padding: "14px 16px",
   cursor: "pointer",
   textAlign: "left",
   display: "grid",
   gap: "6px",
-  transition: "background 180ms ease, border 180ms ease, transform 180ms ease",
+  transition: "background 180ms ease, border 180ms ease, box-shadow 180ms ease",
 };
 
 const staffJobRowSelectedStyle: React.CSSProperties = {
   background: "#f0f8f1",
   border: "1px solid #b8dfc1",
+  borderRadius: "8px",
   boxShadow: "inset 4px 0 0 #21843b",
 };
 
 const staffJobRowFlashStyle: React.CSSProperties = {
   background: "#edf6ef",
   border: "1px solid #b8dfc1",
+  borderRadius: "8px",
 };
 
 const staffJobRowTopStyle: React.CSSProperties = {
