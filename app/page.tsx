@@ -143,10 +143,6 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [addingComment, setAddingComment] = useState(false);
   const [showEditInfoForm, setShowEditInfoForm] = useState(false);
-  const [activityHistoryOpen, setActivityHistoryOpen] = useState(false);
-  const [notesOpen, setNotesOpen] = useState(false);
-  const [documentsOpen, setDocumentsOpen] = useState(false);
-  const [correctionToolsOpen, setCorrectionToolsOpen] = useState(false);
   const [savingEditInfo, setSavingEditInfo] = useState(false);
 
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -360,10 +356,6 @@ const [constructionStatusNote, setConstructionStatusNote] = useState("");
       setActivities([]);
       setMemberAccessLink("");
       setShowEditInfoForm(false);
-      setActivityHistoryOpen(false);
-      setNotesOpen(false);
-      setDocumentsOpen(false);
-      setCorrectionToolsOpen(false);
       return;
     }
 
@@ -403,10 +395,6 @@ const [constructionStatusNote, setConstructionStatusNote] = useState("");
       setDocuments(loadedDocuments);
       setComments(commentData || []);
       setActivities(activityData || []);
-      setActivityHistoryOpen(false);
-      setNotesOpen(false);
-      setDocumentsOpen(false);
-      setCorrectionToolsOpen(false);
 
       await loadSignedFileUrls(loadedDocuments);
 
@@ -584,17 +572,14 @@ setConstructionStatusNote("");
       depositRequired.trim() === "" ? 0 : parseMoney(depositRequired);
     const parsedDepositReceived =
       depositReceived.trim() === "" ? 0 : parseMoney(depositReceived);
-    const parsedFinalPaymentRefund =
-      finalPaymentRefund.trim() === "" ? null : parseSignedMoney(finalPaymentRefund);
 
     if (
       parsedEstimate === null && estimateAmount.trim() !== "" ||
       parsedDepositRequired === null ||
-      parsedDepositReceived === null ||
-      parsedFinalPaymentRefund === null && finalPaymentRefund.trim() !== ""
+      parsedDepositReceived === null
     ) {
       window.alert("Enter valid dollar amounts before saving.");
-      setMessage("Cannot save: valid estimate/deposit/final payment amounts are required.");
+      setMessage("Cannot save: valid estimate/deposit amounts are required.");
       return;
     }
 
@@ -630,7 +615,7 @@ setConstructionStatusNote("");
       p_construction_status: null,
       p_inspection_received: null,
       p_inspection_received_at: null,
-      p_final_bill_amount: parsedFinalPaymentRefund,
+      p_final_bill_amount: null,
       p_final_payment_received: null,
       p_energized_at: null,
     });
@@ -638,7 +623,7 @@ setConstructionStatusNote("");
     if (error) {
       setMessage(`Error saving estimate/deposit amounts: ${error.message}`);
     } else {
-      setMessage(`Saved estimate/deposit/final payment amounts for ${selectedJobNumber}`);
+      setMessage(`Saved estimate/deposit amounts for ${selectedJobNumber}`);
       await loadDashboard();
       await loadSelectedJobData(selectedJobNumber);
     }
@@ -953,7 +938,7 @@ ${accessLink}`);
 
     if (actionId === "final_payment_received") {
       const finalAmount =
-        finalPaymentRefund.trim() === "" ? 0 : parseSignedMoney(finalPaymentRefund);
+        finalPaymentRefund.trim() === "" ? 0 : parseMoney(finalPaymentRefund);
 
       if (finalAmount === null) {
         window.alert("Cannot mark final payment/refund complete: enter a valid Final Payment / Refund amount.");
@@ -1084,33 +1069,24 @@ ${accessLink}`);
 
   if (authLoading) {
     return (
-      <main style={staffPageShellStyle}>
-        <StaffGlobalStyles />
-        <div style={staffLoadingCardStyle}>
-          <h1 style={staffLoadingTitleStyle}>OMEC Connect</h1>
-          <p style={staffMutedStyle}>Checking login...</p>
-        </div>
+      <main style={mainStyle}>
+        <h1>OMEC Connect</h1>
+        <p>Checking login...</p>
       </main>
     );
   }
 
   if (!user) {
     return (
-      <main style={staffAuthShellStyle}>
-        <StaffGlobalStyles />
-        <section style={staffAuthCardStyle}>
-          <div style={staffAuthBrandStyle}>
-            <Image src="/omec-logo.png" alt="OMEC logo" width={96} height={96} style={staffAuthLogoStyle} />
-            <div>
-              <h1 style={staffPageTitleStyle}>OMEC Connect</h1>
-              <p style={staffMutedStyle}>Operations Dashboard</p>
-            </div>
-          </div>
+      <main style={mainStyle}>
+        <h1>OMEC Connect</h1>
+        <p>Please log in to continue.</p>
 
-          {message && <p style={staffMessageStyle}>{message}</p>}
+        {message && <p style={messageStyle}>{message}</p>}
 
-          <form onSubmit={signIn} style={staffAuthFormStyle}>
-            <h2 style={staffSectionTitleStyle}>Login</h2>
+        <section style={sectionStyle}>
+          <form onSubmit={signIn} style={panelStyle}>
+            <h2>Login</h2>
 
             <FormInput label="Email" value={loginEmail} required onChange={setLoginEmail} />
 
@@ -1125,7 +1101,7 @@ ${accessLink}`);
               />
             </label>
 
-            <button type="submit" disabled={loginBusy} style={staffPrimaryButtonStyle}>
+            <button type="submit" disabled={loginBusy} style={buttonStyle}>
               {loginBusy ? "Logging in..." : "Log In"}
             </button>
           </form>
@@ -1134,577 +1110,256 @@ ${accessLink}`);
     );
   }
 
-  const selectedStageLabel = selectedJobDetail
-    ? formatDisplayLabel(selectedJobDetail.current_stage)
-    : selectedJob
-      ? formatDisplayLabel(selectedJob.current_stage)
-      : "No Job Selected";
-
   return (
-    <main style={staffPageShellStyle}>
-      <StaffGlobalStyles />
-      <header style={staffTopBarStyle}>
-        <div style={staffBrandHeaderStyle}>
-          <Image src="/omec-logo.png" alt="OMEC logo" width={78} height={78} style={staffLogoStyle} />
+    <main style={mainStyle}>
+      <div style={topBarStyle}>
+        <div style={brandHeaderStyle}>
+          <Image src="/omec-logo.png" alt="OMEC logo" width={84} height={84} style={logoStyle} />
+
           <div>
-            <h1 style={staffPageTitleStyle}>OMEC Connect</h1>
-            <p style={staffPageSubtitleStyle}>Operations Dashboard</p>
-            <p style={staffUserLineStyle}>
+            <h1 style={{ marginBottom: "4px" }}>OMEC Connect</h1>
+            <p style={{ marginTop: 0 }}>Operations Dashboard</p>
+            <p style={{ marginTop: 0, fontSize: "14px" }}>
               Logged in as <strong>{user.email}</strong> — Role: <strong>{userRole}</strong>
             </p>
           </div>
         </div>
 
-        <div style={staffTopActionsStyle}>
-          {canEdit && (
-            <button type="button" onClick={() => setShowCreateForm(!showCreateForm)} style={staffSecondaryButtonStyle}>
-              {showCreateForm ? "Hide Create Job" : "Create New Job"}
-            </button>
-          )}
-          <button type="button" onClick={signOut} style={staffSecondaryButtonStyle}>
-            Log Out
-          </button>
-        </div>
-      </header>
+        <button type="button" onClick={signOut} style={secondaryButtonStyle}>
+          Log Out
+        </button>
+      </div>
 
-      {message && <p style={staffMessageStyle}>{message}</p>}
+      {message && <p style={messageStyle}>{message}</p>}
 
-      <section style={staffSummaryGridStyle}>
+      <section style={dashboardGridStyle}>
         <DashboardCard title="Total Jobs" value={summary?.total_jobs ?? 0} />
         <DashboardCard title="Open STOP Items" value={summary?.open_stop_items ?? 0} />
         <DashboardCard title="Closed Jobs" value={summary?.closed_jobs ?? 0} />
       </section>
 
-      {canEdit && showCreateForm && (
-        <section style={staffFullWidthCardStyle}>
-          <h2 style={staffSectionTitleStyle}>Create New Job</h2>
+      {canEdit && (
+        <section style={sectionStyle}>
+          <button type="button" onClick={() => setShowCreateForm(!showCreateForm)} style={buttonStyle}>
+            {showCreateForm ? "Hide Create Job Form" : "Create New Job"}
+          </button>
 
-          <form onSubmit={createJob}>
-            <div style={staffFormGridStyle}>
-              <FormInput label="Applicant Name" value={form.applicantName} required onChange={(value) => setForm({ ...form, applicantName: value })} />
-              <FormInput label="Member Number" value={form.memberNumber} onChange={(value) => setForm({ ...form, memberNumber: value })} />
-              <FormInput label="Email" value={form.email} onChange={(value) => setForm({ ...form, email: value })} />
-              <FormInput label="Phone" value={form.phone} onChange={(value) => setForm({ ...form, phone: value })} />
-              <FormInput label="Service Address" value={form.address} required onChange={(value) => setForm({ ...form, address: value })} />
-              <FormInput label="City" value={form.city} onChange={(value) => setForm({ ...form, city: value })} />
-              <FormInput label="State" value={form.state} onChange={(value) => setForm({ ...form, state: value })} />
-              <FormInput label="Postal Code" value={form.postalCode} onChange={(value) => setForm({ ...form, postalCode: value })} />
+          {showCreateForm && (
+            <div style={panelStyle}>
+              <h2>Create New Job</h2>
 
-              <label style={labelStyle}>
-                Job Type
-                <select
-                  value={form.jobType}
-                  onChange={(event) => setForm({ ...form, jobType: event.target.value })}
-                  style={inputStyle}
-                >
-                  <option value="new_service">New Service</option>
-                  <option value="service_upgrade">Service Upgrade</option>
-                  <option value="line_extension">Line Extension</option>
-                  <option value="no_omec_work_required">No OMEC Work Required</option>
-                  <option value="cancelled_inactive">Cancelled / Inactive</option>
-                </select>
-              </label>
+              <form onSubmit={createJob}>
+                <FormInput label="Applicant Name" value={form.applicantName} required onChange={(value) => setForm({ ...form, applicantName: value })} />
+                <FormInput label="Member Number" value={form.memberNumber} onChange={(value) => setForm({ ...form, memberNumber: value })} />
+                <FormInput label="Email" value={form.email} onChange={(value) => setForm({ ...form, email: value })} />
+                <FormInput label="Phone" value={form.phone} onChange={(value) => setForm({ ...form, phone: value })} />
+                <FormInput label="Service Address" value={form.address} required onChange={(value) => setForm({ ...form, address: value })} />
+                <FormInput label="City" value={form.city} onChange={(value) => setForm({ ...form, city: value })} />
+                <FormInput label="State" value={form.state} onChange={(value) => setForm({ ...form, state: value })} />
+                <FormInput label="Postal Code" value={form.postalCode} onChange={(value) => setForm({ ...form, postalCode: value })} />
+
+                <label style={labelStyle}>
+                  Job Type
+                  <select
+                    value={form.jobType}
+                    onChange={(event) => setForm({ ...form, jobType: event.target.value })}
+                    style={inputStyle}
+                  >
+                    <option value="new_service">New Service</option>
+                    <option value="service_upgrade">Service Upgrade</option>
+                    <option value="line_extension">Line Extension</option>
+                    <option value="no_omec_work_required">No OMEC Work Required</option>
+                    <option value="cancelled_inactive">Cancelled / Inactive</option>
+                  </select>
+                </label>
+
+                <div style={buttonRowStyle}>
+                  <button type="submit" disabled={creating} style={buttonStyle}>
+                    {creating ? "Creating..." : "Create Job"}
+                  </button>
+
+                  <button type="button" onClick={() => setShowCreateForm(false)} style={secondaryButtonStyle}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </div>
-
-            <div style={staffButtonRowStyle}>
-              <button type="submit" disabled={creating} style={staffPrimaryButtonStyle}>
-                {creating ? "Creating..." : "Create Job"}
-              </button>
-              <button type="button" onClick={() => setShowCreateForm(false)} style={staffSecondaryButtonStyle}>
-                Cancel
-              </button>
-            </div>
-          </form>
+          )}
         </section>
       )}
 
       {!canEdit && (
-        <section style={staffFullWidthCardStyle}>
+        <section style={sectionStyle}>
           <p style={emptyStateStyle}>
             Viewer mode: you can search and view jobs, notes, and documents, but cannot create or update records.
           </p>
         </section>
       )}
 
-      <section style={staffDesktopGridStyle}>
-        <aside style={staffJobQueueCardStyle}>
-          <div style={staffPanelHeaderStyle}>
-            <div>
-              <h2 style={staffSectionTitleStyle}>Jobs</h2>
-              <p style={staffMutedStyle}>
-                Showing {visibleJobs.length} of {jobs.length}
+      <section style={sectionStyle}>
+        <h2>Search / Filter Jobs</h2>
+
+        <FormInput label="Search" value={searchText} onChange={setSearchText} />
+
+        <label style={labelStyle}>
+          Gate Status
+          <select value={gateFilter} onChange={(event) => setGateFilter(event.target.value)} style={inputStyle}>
+            <option value="all">All</option>
+            <option value="stop">STOP</option>
+            <option value="go">GO</option>
+            <option value="closed">Closed</option>
+            <option value="watch">Watch</option>
+          </select>
+        </label>
+      </section>
+
+      <section style={sectionStyle}>
+        <h2>Job List</h2>
+
+        {loading ? (
+          <p>Loading jobs...</p>
+        ) : (
+          <>
+            <div style={jobListHeaderRowStyle}>
+              <p>
+                Showing {visibleJobs.length} of {jobs.length} jobs. Click a row to view details.
               </p>
-            </div>
 
-            {jobListCollapsed && selectedJobNumber && (
-              <button type="button" onClick={() => setJobListCollapsed(false)} style={staffSmallButtonStyle}>
-                Show All
-              </button>
-            )}
-          </div>
-
-          <FormInput label="Search" value={searchText} onChange={setSearchText} />
-
-          <label style={labelStyle}>
-            Gate Status
-            <select value={gateFilter} onChange={(event) => setGateFilter(event.target.value)} style={inputStyle}>
-              <option value="all">All</option>
-              <option value="stop">STOP</option>
-              <option value="go">GO</option>
-              <option value="closed">Closed</option>
-              <option value="watch">Watch</option>
-            </select>
-          </label>
-
-          <div style={staffJobListStyle}>
-            {loading ? (
-              <p style={staffMutedStyle}>Loading jobs...</p>
-            ) : visibleJobs.length === 0 ? (
-              <p style={emptyStateStyle}>No jobs match your filters.</p>
-            ) : (
-              visibleJobs.map((job) => (
+              {jobListCollapsed && selectedJobNumber && (
                 <button
                   type="button"
-                  className="staff-job-row-button"
-                  key={job.job_number}
-                  onClick={() => selectJobFromList(job.job_number)}
-                  style={{
-                    ...staffJobRowStyle,
-                    ...(flashJobNumber === job.job_number
-                      ? staffJobRowFlashStyle
-                      : job.job_number === selectedJobNumber
-                        ? staffJobRowSelectedStyle
-                        : {}),
-                  }}
+                  onClick={() => setJobListCollapsed(false)}
+                  style={secondaryButtonStyle}
                 >
-                  <span style={staffJobRowTopStyle}>
-                    <strong>{job.job_number}</strong>
-                    {renderGateBadge(job.gate_status)}
-                  </span>
-                  <span style={staffJobApplicantStyle}>{job.applicant_name}</span>
-                  <span style={staffJobMetaStyle}>
-                    {job.member_number || "No member #"} · {formatDisplayLabel(job.current_stage)}
-                  </span>
-                  <span style={staffJobNextActionStyle}>{job.next_action}</span>
+                  Show All Jobs
                 </button>
-              ))
-            )}
-          </div>
-        </aside>
-
-        <section style={staffCenterColumnStyle}>
-          {!selectedJobNumber && (
-            <div style={staffFullWidthCardStyle}>
-              <h2 style={staffSectionTitleStyle}>Select a job</h2>
-              <p style={staffMutedStyle}>
-                Choose a job from the left queue to view details, workflow actions, notes, documents, and history.
-              </p>
-            </div>
-          )}
-
-          {selectedJobNumber && selectedJobDetail && (
-            <>
-              <section style={staffSelectedJobHeaderStyle}>
-                <div>
-                  <p style={staffEyebrowStyle}>Selected Job</p>
-                  <h2 style={staffSelectedJobTitleStyle}>
-                    {selectedJobDetail.job_number} — {selectedJobDetail.applicant_name}
-                  </h2>
-                  <p style={staffMutedStyle}>
-                    {selectedJobDetail.service_address_line1}
-                    {selectedJobDetail.city ? `, ${selectedJobDetail.city}` : ""}
-                    {selectedJobDetail.state ? `, ${selectedJobDetail.state}` : ""}
-                  </p>
-                </div>
-                <span style={staffStageBadgeStyle}>{selectedStageLabel}</span>
-              </section>
-
-              {canEdit && showEditInfoForm && (
-                <form onSubmit={saveJobInfo} style={staffFullWidthCardStyle}>
-                  <h3 style={staffSectionTitleStyle}>Edit Job / Member Info</h3>
-
-                  <div style={staffFormGridStyle}>
-                    <FormInput label="Applicant Name" value={editInfoForm.applicantName} required onChange={(value) => setEditInfoForm({ ...editInfoForm, applicantName: value })} />
-                    <FormInput label="Member Number" value={editInfoForm.memberNumber} onChange={(value) => setEditInfoForm({ ...editInfoForm, memberNumber: value })} />
-                    <FormInput label="Email" value={editInfoForm.email} onChange={(value) => setEditInfoForm({ ...editInfoForm, email: value })} />
-                    <FormInput label="Phone" value={editInfoForm.phone} onChange={(value) => setEditInfoForm({ ...editInfoForm, phone: value })} />
-                    <FormInput label="Service Address" value={editInfoForm.serviceAddressLine1} required onChange={(value) => setEditInfoForm({ ...editInfoForm, serviceAddressLine1: value })} />
-                    <FormInput label="Address Line 2" value={editInfoForm.serviceAddressLine2} onChange={(value) => setEditInfoForm({ ...editInfoForm, serviceAddressLine2: value })} />
-                    <FormInput label="City" value={editInfoForm.city} onChange={(value) => setEditInfoForm({ ...editInfoForm, city: value })} />
-                    <FormInput label="State" value={editInfoForm.state} onChange={(value) => setEditInfoForm({ ...editInfoForm, state: value })} />
-                    <FormInput label="ZIP" value={editInfoForm.postalCode} onChange={(value) => setEditInfoForm({ ...editInfoForm, postalCode: value })} />
-                    <FormInput label="Work Order Number" value={editInfoForm.workOrderNumber} onChange={(value) => setEditInfoForm({ ...editInfoForm, workOrderNumber: value })} />
-                  </div>
-
-                  <div style={staffButtonRowStyle}>
-                    <button type="submit" disabled={savingEditInfo} style={staffPrimaryButtonStyle}>
-                      {savingEditInfo ? "Saving..." : "Save Job Info"}
-                    </button>
-                    <button type="button" onClick={() => setShowEditInfoForm(false)} style={staffSecondaryButtonStyle}>
-                      Cancel
-                    </button>
-                  </div>
-                </form>
               )}
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <table style={tableStyle}>
+                <thead>
+                  <tr>
+                    <TableHeader>Job #</TableHeader>
+                    <TableHeader>Applicant</TableHeader>
+                    <TableHeader>Member #</TableHeader>
+                    <TableHeader>Stage</TableHeader>
+                    <TableHeader>Status</TableHeader>
+                    <TableHeader>Gate Message</TableHeader>
+                    <TableHeader>Next Action</TableHeader>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {visibleJobs.map((job) => (
+                    <tr
+                      key={job.job_number}
+                      onClick={() => selectJobFromList(job.job_number)}
+                      style={{
+                        cursor: "pointer",
+                        background:
+                        flashJobNumber === job.job_number
+                          ? "#d9f2dd"
+                          : job.job_number === selectedJobNumber
+                          ? "#fff7cc"
+                          : "#ffffff",
+                        transition: "background 180ms ease",
+                      }}
+                    >
+                      <TableCell>{job.job_number}</TableCell>
+                      <TableCell>{job.applicant_name}</TableCell>
+                      <TableCell>{job.member_number || "-"}</TableCell>
+                      <TableCell>{formatDisplayLabel(job.current_stage)}</TableCell>
+                      <TableCell>{renderGateBadge(job.gate_status)}</TableCell>
+                      <TableCell>{job.gate_message}</TableCell>
+                      <TableCell>{job.next_action}</TableCell>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </section>
+
+      {!selectedJobNumber && (
+        <section style={sectionStyle}>
+          <p style={emptyStateStyle}>
+            Select a job from the list to view details, workflow actions, correction tools, notes, documents/photos, and activity history.
+          </p>
+        </section>
+      )}
+
+      {selectedJobNumber && selectedJobDetail && (
+        <>
+          <section style={sectionStyle}>
+            <h2>Selected Job Details</h2>
+
+            <div style={buttonRowStyle}>
+              <button type="button" onClick={printJobPacket} style={buttonStyle}>
+                Print / Save Job Packet
+              </button>
 
               {canEdit && (
-                <>
-                  <section style={staffWorkflowCardStyle}>
-                    <div style={staffPanelHeaderStyle}>
-                      <div>
-                        <h2 style={staffSectionTitleStyle}>Workflow Inputs</h2>
-                        <p style={staffMutedStyle}>Dates use MM-DD-YYYY. Money amounts can be positive or negative for final refunds.</p>
-                      </div>
-                    </div>
-
-                    <div style={staffFormGridStyle}>
-                      <FormInput label="Site Visit Date" value={siteVisitDate} onChange={setSiteVisitDate} />
-                      <FormInput label="Inspection Date" value={inspectionDate} onChange={setInspectionDate} />
-                      <FormInput label="Energized Date" value={energizedDate} onChange={setEnergizedDate} />
-                      <FormInput label="Estimate Amount" value={estimateAmount} onChange={setEstimateAmount} />
-                      <FormInput label="Deposit Required" value={depositRequired} onChange={setDepositRequired} />
-                      <FormInput label="Deposit Received" value={depositReceived} onChange={setDepositReceived} />
-                      <FormInput label="Final Payment / Refund" value={finalPaymentRefund} onChange={setFinalPaymentRefund} />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={saveEstimateDepositAmounts}
-                      disabled={updating || !selectedJobNumber}
-                      style={staffPrimaryButtonStyle}
-                    >
-                      Save Estimate / Deposit / Final Amounts
-                    </button>
-                  </section>
-
-                  {canShowConstructionControls(selectedJobDetail) && (
-                    <section style={staffFullWidthCardStyle}>
-                      <h2 style={staffSectionTitleStyle}>Construction Status</h2>
-                      <p style={staffMutedStyle}>
-                        Use this when a job is ready for construction, in progress, waiting on materials, waiting on the member, or complete.
-                      </p>
-
-                      <form onSubmit={saveConstructionStatus} style={staffStackStyle}>
-                        <label style={labelStyle}>
-                          Construction Status
-                          <select
-                            value={constructionStatus}
-                            onChange={(event) => setConstructionStatus(event.target.value)}
-                            style={inputStyle}
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="waiting_on_material">Waiting on Materials</option>
-                            <option value="waiting_on_member">Waiting on Member</option>
-                            <option value="completed">Completed</option>
-                            <option value="not_required">Not Required</option>
-                          </select>
-                        </label>
-
-                        <label style={labelStyle}>
-                          Construction Status Note
-                          <textarea
-                            value={constructionStatusNote}
-                            onChange={(event) => setConstructionStatusNote(event.target.value)}
-                            style={{ ...inputStyle, minHeight: "90px" }}
-                            placeholder="Required if Waiting on Member. Example: Need easement signed, trench dug, meter base corrected..."
-                          />
-                        </label>
-
-                        <button
-                          type="submit"
-                          disabled={updating || !selectedJobNumber}
-                          style={staffPrimaryButtonStyle}
-                        >
-                          Save Construction Status
-                        </button>
-                      </form>
-                    </section>
-                  )}
-
-                  <section style={staffNextActionCardStyle}>
-                    <div>
-                      <h2 style={staffSectionTitleStyle}>Next Best Action</h2>
-                      <p style={staffMutedStyle}>{selectedJobDetail.next_action}</p>
-                    </div>
-
-                    <div style={staffButtonRowStyle}>
-                      {nextActions.map((action) => (
-                        <ActionButton key={action.id} disabled={updating || !selectedJobNumber} onClick={() => handleWorkflowAction(action)}>
-                          {action.label}
-                        </ActionButton>
-                      ))}
-
-                      {selectedJob && nextActions.length === 0 && <p style={staffMutedStyle}>No workflow action needed for this job.</p>}
-                    </div>
-
-                    {updating && <p style={staffMutedStyle}>Updating job...</p>}
-                  </section>
-                </>
+                <button type="button" onClick={() => setShowEditInfoForm(!showEditInfoForm)} style={secondaryButtonStyle}>
+                  {showEditInfoForm ? "Hide Edit Job Info" : "Edit Job Info"}
+                </button>
               )}
+            </div>
 
-              <section style={staffDropdownSectionStyle}>
-                <button
-                  type="button"
-                  className="staff-dropdown-header-button"
-                  onClick={() => setNotesOpen(!notesOpen)}
-                  style={staffDropdownHeaderButtonStyle}
-                  aria-expanded={notesOpen}
-                >
-                  <span>
-                    <span style={staffDropdownTitleStyle}>Internal Notes</span>
-                    <span style={staffDropdownSubtitleStyle}>
-                      {comments.length === 0
-                        ? "No notes yet"
-                        : `${comments.length} note${comments.length === 1 ? "" : "s"} recorded`}
-                    </span>
-                  </span>
-                  <span style={staffDropdownChevronStyle}>{notesOpen ? "⌃" : "⌄"}</span>
-                </button>
+            {canEdit && showEditInfoForm && (
+              <form onSubmit={saveJobInfo} style={panelStyle}>
+                <h3>Edit Job / Member Info</h3>
 
-                {notesOpen && (
-                  <div style={staffDropdownPanelStyle}>
-                    {canEdit && (
-                      <form onSubmit={addComment} style={staffStackStyle}>
-                        <label style={labelStyle}>
-                          Add Note
-                          <textarea
-                            value={commentBody}
-                            onChange={(event) => setCommentBody(event.target.value)}
-                            style={{ ...inputStyle, minHeight: "90px" }}
-                            placeholder="Enter internal note..."
-                          />
-                        </label>
+                <FormInput label="Applicant Name" value={editInfoForm.applicantName} required onChange={(value) => setEditInfoForm({ ...editInfoForm, applicantName: value })} />
+                <FormInput label="Member Number" value={editInfoForm.memberNumber} onChange={(value) => setEditInfoForm({ ...editInfoForm, memberNumber: value })} />
+                <FormInput label="Email" value={editInfoForm.email} onChange={(value) => setEditInfoForm({ ...editInfoForm, email: value })} />
+                <FormInput label="Phone" value={editInfoForm.phone} onChange={(value) => setEditInfoForm({ ...editInfoForm, phone: value })} />
+                <FormInput label="Service Address" value={editInfoForm.serviceAddressLine1} required onChange={(value) => setEditInfoForm({ ...editInfoForm, serviceAddressLine1: value })} />
+                <FormInput label="Address Line 2" value={editInfoForm.serviceAddressLine2} onChange={(value) => setEditInfoForm({ ...editInfoForm, serviceAddressLine2: value })} />
+                <FormInput label="City" value={editInfoForm.city} onChange={(value) => setEditInfoForm({ ...editInfoForm, city: value })} />
+                <FormInput label="State" value={editInfoForm.state} onChange={(value) => setEditInfoForm({ ...editInfoForm, state: value })} />
+                <FormInput label="ZIP" value={editInfoForm.postalCode} onChange={(value) => setEditInfoForm({ ...editInfoForm, postalCode: value })} />
+                <FormInput label="Work Order Number" value={editInfoForm.workOrderNumber} onChange={(value) => setEditInfoForm({ ...editInfoForm, workOrderNumber: value })} />
 
-                        <button type="submit" disabled={addingComment} style={staffPrimaryButtonStyle}>
-                          {addingComment ? "Adding..." : "Add Note"}
-                        </button>
-                      </form>
-                    )}
-
-                    {!canEdit && <p style={emptyStateStyle}>Viewer mode: notes are read-only.</p>}
-
-                    {comments.length === 0 ? (
-                      <p style={staffMutedStyle}>No notes for this job yet.</p>
-                    ) : (
-                      <div style={staffStackStyle}>
-                        {comments.map((comment) => (
-                          <div key={comment.id} style={noteCardStyle}>
-                            <div>{comment.comment_body}</div>
-                            <div style={{ fontSize: "12px", color: "#555", marginTop: "8px" }}>
-                              {comment.visibility} — {new Date(comment.created_at).toLocaleString()}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </section>
-
-              <section style={staffDropdownSectionStyle}>
-                <button
-                  type="button"
-                  className="staff-dropdown-header-button"
-                  onClick={() => setActivityHistoryOpen(!activityHistoryOpen)}
-                  style={staffDropdownHeaderButtonStyle}
-                  aria-expanded={activityHistoryOpen}
-                >
-                  <span>
-                    <span style={staffDropdownTitleStyle}>Activity History</span>
-                    <span style={staffDropdownSubtitleStyle}>
-                      {activities.length === 0
-                        ? "No activity recorded yet"
-                        : `${activities.length} event${activities.length === 1 ? "" : "s"} recorded`}
-                    </span>
-                  </span>
-                  <span style={staffDropdownChevronStyle}>{activityHistoryOpen ? "⌃" : "⌄"}</span>
-                </button>
-
-                {activityHistoryOpen && (
-                  <div style={staffDropdownPanelStyle}>
-                    {activities.length === 0 ? (
-                      <p style={staffMutedStyle}>No activity has been recorded for this job yet.</p>
-                    ) : (
-                      <div style={staffStackStyle}>
-                        {activities.map((activity) => (
-                          <div key={activity.id} style={activityCardStyle}>
-                            <div style={{ fontWeight: 700 }}>{activity.action_label}</div>
-                            <div style={{ fontSize: "13px", color: "#555" }}>
-                              {activity.actor_email || "Unknown user"} — {new Date(activity.created_at).toLocaleString()}
-                            </div>
-                            <div style={{ fontSize: "12px", marginTop: "4px" }}>Type: {formatDisplayLabel(activity.action_type)}</div>
-                            {activity.details && Object.keys(activity.details).length > 0 && (
-                              <div style={activityDetailsStyle}>
-                                {Object.entries(activity.details).map(([key, value]) => (
-                                  <div key={key} style={activityDetailRowStyle}>
-                                    <strong>{formatDisplayLabel(key)}:</strong> <span>{formatActivityValue(value)}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </section>
-
-              <section style={staffDropdownSectionStyle}>
-                <button
-                  type="button"
-                  className="staff-dropdown-header-button"
-                  onClick={() => setDocumentsOpen(!documentsOpen)}
-                  style={staffDropdownHeaderButtonStyle}
-                  aria-expanded={documentsOpen}
-                >
-                  <span>
-                    <span style={staffDropdownTitleStyle}>Documents / Photos</span>
-                    <span style={staffDropdownSubtitleStyle}>
-                      {documents.length === 0
-                        ? "No files uploaded"
-                        : `${documents.length} file${documents.length === 1 ? "" : "s"} uploaded`}
-                    </span>
-                  </span>
-                  <span style={staffDropdownChevronStyle}>{documentsOpen ? "⌃" : "⌄"}</span>
-                </button>
-
-                {documentsOpen && (
-                  <div style={staffDropdownPanelStyle}>
-                    {canEdit && (
-                      <form onSubmit={uploadDocument} style={staffStackStyle}>
-                        <label style={labelStyle}>
-                          Document Type
-                          <select value={documentType} onChange={(event) => setDocumentType(event.target.value)} style={inputStyle}>
-                            <option value="application">Application</option>
-                            <option value="estimate">Estimate</option>
-                            <option value="signed_estimate">Signed Estimate</option>
-                            <option value="site_photo">Site Photo</option>
-                            <option value="construction_photo">Construction Photo</option>
-                            <option value="easement_row">Easement / ROW</option>
-                            <option value="inspection">Inspection</option>
-                            <option value="payment_record">Payment Record</option>
-                            <option value="other">Other</option>
-                          </select>
-                        </label>
-
-                        <label style={labelStyle}>
-                          File or Photo
-                          <input
-                            type="file"
-                            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-                            capture="environment"
-                            onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
-                            style={inputStyle}
-                          />
-                        </label>
-
-                        <button type="submit" disabled={uploading || !selectedJobNumber} style={staffPrimaryButtonStyle}>
-                          {uploading ? "Uploading..." : "Upload File / Photo"}
-                        </button>
-                      </form>
-                    )}
-
-                    {!canEdit && <p style={emptyStateStyle}>Viewer mode: documents are read-only.</p>}
-
-                    {documents.length === 0 ? (
-                      <p style={staffMutedStyle}>No files uploaded for this job yet.</p>
-                    ) : (
-                      <div style={fileGridStyle}>
-                        {documents.map((document) => {
-                          const fileUrl = signedFileUrls[document.storage_path];
-                          const isImage = isImageFile(document.file_name);
-
-                          return (
-                            <div key={document.id} style={fileCardStyle}>
-                              {!fileUrl ? (
-                                <div style={filePlaceholderStyle}>Preparing secure link...</div>
-                              ) : isImage ? (
-                                <a href={fileUrl} target="_blank" rel="noreferrer">
-                                  <Image src={fileUrl} alt={document.file_name} width={180} height={140} unoptimized style={thumbnailStyle} />
-                                </a>
-                              ) : (
-                                <div style={filePlaceholderStyle}>File</div>
-                              )}
-
-                              {fileUrl ? (
-                                <a href={fileUrl} target="_blank" rel="noreferrer">
-                                  {document.file_name}
-                                </a>
-                              ) : (
-                                <span>{document.file_name}</span>
-                              )}
-
-                              <div style={{ fontSize: "12px", marginTop: "4px" }}>{formatDisplayLabel(document.document_type)}</div>
-                              <div style={{ fontSize: "12px", color: "#555555" }}>{new Date(document.created_at).toLocaleString()}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </section>
-
-              {isAdmin && (
-                <section style={staffDropdownSectionStyle}>
-                  <button
-                    type="button"
-                    className="staff-dropdown-header-button"
-                    onClick={() => setCorrectionToolsOpen(!correctionToolsOpen)}
-                    style={staffDropdownHeaderButtonStyle}
-                    aria-expanded={correctionToolsOpen}
-                  >
-                    <span>
-                      <span style={staffDropdownTitleStyle}>Correction Tools</span>
-                      <span style={staffDropdownSubtitleStyle}>Admin-only reset tools</span>
-                    </span>
-                    <span style={staffDropdownChevronStyle}>{correctionToolsOpen ? "⌃" : "⌄"}</span>
+                <div style={buttonRowStyle}>
+                  <button type="submit" disabled={savingEditInfo} style={buttonStyle}>
+                    {savingEditInfo ? "Saving..." : "Save Job Info"}
                   </button>
 
-                  {correctionToolsOpen && (
-                    <div style={staffDropdownPanelStyle}>
-                      <p style={staffMutedStyle}>Use these only to correct mistakes. Resetting a job clears later workflow fields so the gate engine can recalculate the correct status.</p>
-
-                      <div style={staffButtonRowStyle}>
-                        <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("membership_needed", "Membership Needed")}>Reset to Membership Needed</ActionButton>
-                        <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("site_fee_needed", "Site Fee Needed")}>Reset to Site Fee Needed</ActionButton>
-                        <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("site_visit_needed", "Site Visit Needed")}>Reset to Site Visit Needed</ActionButton>
-                        <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("estimate_needed", "Estimate Needed")}>Reset to Estimate Needed</ActionButton>
-                        <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("awaiting_deposit", "Awaiting Deposit")}>Reset to Awaiting Deposit</ActionButton>
-                        <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("ready_for_construction", "Ready for Construction")}>Reset to Ready for Construction</ActionButton>
-                        <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("waiting_on_inspection", "Waiting on Inspection")}>Reset to Waiting on Inspection</ActionButton>
-                        <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("final_billing", "Final Billing")}>Reset to Final Billing</ActionButton>
-                      </div>
-                    </div>
-                  )}
-                </section>
-              )}
-            </>
-          )}
-        </section>
-
-        <aside style={staffSnapshotCardStyle}>
-          {selectedJobNumber && selectedJobDetail ? (
-            <>
-              <div style={staffPanelHeaderStyle}>
-                <div>
-                  <h2 style={staffSectionTitleStyle}>Job Snapshot</h2>
-                  <p style={staffMutedStyle}>Fast reference for staff</p>
+                  <button type="button" onClick={() => setShowEditInfoForm(false)} style={secondaryButtonStyle}>
+                    Cancel
+                  </button>
                 </div>
-                {renderGateBadge(selectedJobDetail.gate_status)}
-              </div>
+              </form>
+            )}
 
-              <div style={staffSnapshotGridStyle}>
-                <Detail label="Applicant" value={selectedJobDetail.applicant_name} />
+            <div style={detailCardStyle}>
+              <h3>
+                {selectedJobDetail.job_number} — {selectedJobDetail.applicant_name}
+              </h3>
+
+              <div style={detailGridStyle}>
+                <Detail label="Applicant Name" value={selectedJobDetail.applicant_name} />
                 <Detail label="Member #" value={selectedJobDetail.member_number} />
-                <Detail label="Phone" value={selectedJobDetail.phone} />
                 <Detail label="Email" value={selectedJobDetail.email} />
+                <Detail label="Phone" value={selectedJobDetail.phone} />
                 <Detail label="Job Type" value={formatDisplayLabel(selectedJobDetail.job_type)} />
                 <Detail label="Work Order #" value={selectedJobDetail.work_order_number} />
                 <Detail label="Inquiry Date" value={formatDate(selectedJobDetail.inquiry_date)} />
-                <Detail label="Current Stage" value={selectedStageLabel} />
+                <Detail
+                  label="Address"
+                  value={`${selectedJobDetail.service_address_line1}${
+                    selectedJobDetail.service_address_line2 ? ", " + selectedJobDetail.service_address_line2 : ""
+                  }`}
+                />
+                <Detail
+                  label="City / State / ZIP"
+                  value={`${selectedJobDetail.city || ""}, ${selectedJobDetail.state || ""} ${selectedJobDetail.postal_code || ""}`}
+                />
+                <Detail label="Current Stage" value={formatDisplayLabel(selectedJobDetail.current_stage)} />
+                <DetailWide label="Gate" value={renderGateBadge(selectedJobDetail.gate_status, selectedJobDetail.gate_message)} />
+                <DetailWide label="Next Action" value={selectedJobDetail.next_action} />
                 <Detail label="Membership" value={formatDisplayLabel(selectedJobDetail.membership_status)} />
                 <Detail label="Site Fee" value={formatDisplayLabel(selectedJobDetail.site_fee_status)} />
                 <Detail label="Site Visit" value={formatDateTime(selectedJobDetail.site_visit_at)} />
@@ -1721,597 +1376,314 @@ ${accessLink}`);
                 <Detail label="Final Payment Complete" value={selectedJobDetail.final_payment_received ? "Yes" : "No"} />
                 <Detail label="Energized" value={formatDateTime(selectedJobDetail.energized_at)} />
               </div>
+            </div>
+          </section>
 
-              <div style={staffQuickActionsCardStyle}>
-                <h3 style={staffSmallTitleStyle}>Quick Actions</h3>
-                <button type="button" onClick={printJobPacket} style={staffFullButtonStyle}>
-                  Print / Save Job Packet
+          {canEdit && (
+            <>
+              <section style={sectionStyle}>
+                <h2>Member Access Link</h2>
+
+                <p>
+                  Generate a temporary passwordless link that lets this member view their public job status.
+                  No email is sent automatically yet.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={generateMemberAccessLink}
+                  disabled={updating || !selectedJobNumber}
+                  style={buttonStyle}
+                >
+                  Generate Member Access Link
                 </button>
 
-                {canEdit && (
-                  <button type="button" onClick={() => setShowEditInfoForm(!showEditInfoForm)} style={staffFullButtonStyle}>
-                    {showEditInfoForm ? "Hide Edit Job Info" : "Edit Job Info"}
-                  </button>
-                )}
-
-                {canEdit && (
-                  <button
-                    type="button"
-                    onClick={generateMemberAccessLink}
-                    disabled={updating || !selectedJobNumber}
-                    style={staffFullButtonStyle}
-                  >
-                    Generate Member Access Link
-                  </button>
-                )}
-
                 {memberAccessLink && (
-                  <label style={labelStyle}>
-                    Member Access Link
-                    <input
-                      value={memberAccessLink}
-                      readOnly
-                      onFocus={(event) => event.target.select()}
-                      style={inputStyle}
-                    />
+                  <div style={panelStyle}>
+                    <label style={labelStyle}>
+                      Member Access Link
+                      <input
+                        value={memberAccessLink}
+                        readOnly
+                        onFocus={(event) => event.target.select()}
+                        style={inputStyle}
+                      />
+                    </label>
+
                     <button
                       type="button"
                       onClick={() => navigator.clipboard.writeText(memberAccessLink)}
-                      style={staffSmallButtonStyle}
+                      style={secondaryButtonStyle}
                     >
                       Copy Link
                     </button>
-                  </label>
+
+                    <p style={{ fontSize: "13px", color: "#555" }}>
+                      Link expires in 7 days. Generating a new link replaces the prior active link.
+                    </p>
+                  </div>
                 )}
-              </div>
+              </section>
+
+              <section style={sectionStyle}>
+                <h2>Workflow Inputs</h2>
+
+                <p>Dates use MM-DD-YYYY. Money amounts can be entered as whole numbers or decimals.</p>
+
+                <div style={detailGridStyle}>
+                  <FormInput label="Site Visit Date" value={siteVisitDate} onChange={setSiteVisitDate} />
+                  <FormInput label="Inspection Date" value={inspectionDate} onChange={setInspectionDate} />
+                  <FormInput label="Energized Date" value={energizedDate} onChange={setEnergizedDate} />
+                  <FormInput label="Estimate Amount" value={estimateAmount} onChange={setEstimateAmount} />
+                  <FormInput label="Deposit Required" value={depositRequired} onChange={setDepositRequired} />
+                  <FormInput label="Deposit Received" value={depositReceived} onChange={setDepositReceived} />
+                  <FormInput label="Final Payment / Refund" value={finalPaymentRefund} onChange={setFinalPaymentRefund} />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={saveEstimateDepositAmounts}
+                  disabled={updating || !selectedJobNumber}
+                  style={buttonStyle}
+                >
+                  Save Estimate / Deposit Amounts
+                </button>
+              </section>
+              {canShowConstructionControls(selectedJobDetail) && (
+              <section style={sectionStyle}>
+  <h2>Construction Status</h2>
+
+  <p>
+    Use this when a job is ready for construction, in progress,
+    waiting on materials, waiting on the member, or complete.
+  </p>
+
+  <form onSubmit={saveConstructionStatus} style={panelStyle}>
+    <label style={labelStyle}>
+      Construction Status
+      <select
+        value={constructionStatus}
+        onChange={(event) => setConstructionStatus(event.target.value)}
+        style={inputStyle}
+      >
+        <option value="pending">Pending</option>
+        <option value="in_progress">In Progress</option>
+        <option value="waiting_on_material">Waiting on Materials</option>
+        <option value="waiting_on_member">Waiting on Member</option>
+        <option value="completed">Completed</option>
+        <option value="not_required">Not Required</option>
+      </select>
+    </label>
+
+    <label style={labelStyle}>
+      Construction Status Note
+      <textarea
+        value={constructionStatusNote}
+        onChange={(event) => setConstructionStatusNote(event.target.value)}
+        style={{ ...inputStyle, minHeight: "90px" }}
+        placeholder="Required if Waiting on Member. Example: Need easement signed, trench dug, meter base corrected..."
+      />
+    </label>
+
+    <button
+      type="submit"
+      disabled={updating || !selectedJobNumber}
+      style={buttonStyle}
+    >
+      Save Construction Status
+    </button>
+  </form>
+</section>
+                            )}
+<section style={sectionStyle}>
+                <h2>Update Job Status</h2>
+
+                <div style={buttonRowStyle}>
+                  {nextActions.map((action) => (
+                    <ActionButton key={action.id} disabled={updating || !selectedJobNumber} onClick={() => handleWorkflowAction(action)}>
+                      {action.label}
+                    </ActionButton>
+                  ))}
+
+                  {selectedJob && nextActions.length === 0 && <p>No workflow action needed for this job.</p>}
+                </div>
+
+                {updating && <p>Updating job...</p>}
+              </section>
             </>
-          ) : (
-            <div style={staffEmptySnapshotStyle}>
-              <h2 style={staffSectionTitleStyle}>Job Snapshot</h2>
-              <p style={staffMutedStyle}>Select a job to see member details and quick actions.</p>
-            </div>
           )}
-        </aside>
-      </section>
+
+          {isAdmin && (
+            <section style={sectionStyle}>
+              <h2>Correction Tools</h2>
+
+              <p>Use these only to correct mistakes. Resetting a job clears later workflow fields so the gate engine can recalculate the correct status.</p>
+
+              <div style={buttonRowStyle}>
+                <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("membership_needed", "Membership Needed")}>Reset to Membership Needed</ActionButton>
+                <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("site_fee_needed", "Site Fee Needed")}>Reset to Site Fee Needed</ActionButton>
+                <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("site_visit_needed", "Site Visit Needed")}>Reset to Site Visit Needed</ActionButton>
+                <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("estimate_needed", "Estimate Needed")}>Reset to Estimate Needed</ActionButton>
+                <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("awaiting_deposit", "Awaiting Deposit")}>Reset to Awaiting Deposit</ActionButton>
+                <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("ready_for_construction", "Ready for Construction")}>Reset to Ready for Construction</ActionButton>
+                <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("waiting_on_inspection", "Waiting on Inspection")}>Reset to Waiting on Inspection</ActionButton>
+                <ActionButton disabled={updating || !selectedJobNumber} onClick={() => resetJobToStage("final_billing", "Final Billing")}>Reset to Final Billing</ActionButton>
+              </div>
+            </section>
+          )}
+
+          <section style={sectionStyle}>
+            <h2>Internal Notes</h2>
+
+            {canEdit && (
+              <form onSubmit={addComment}>
+                <label style={labelStyle}>
+                  Add Note
+                  <textarea
+                    value={commentBody}
+                    onChange={(event) => setCommentBody(event.target.value)}
+                    style={{ ...inputStyle, minHeight: "90px" }}
+                    placeholder="Enter internal note..."
+                  />
+                </label>
+
+                <button type="submit" disabled={addingComment} style={buttonStyle}>
+                  {addingComment ? "Adding..." : "Add Note"}
+                </button>
+              </form>
+            )}
+
+            {!canEdit && <p style={emptyStateStyle}>Viewer mode: notes are read-only.</p>}
+
+            <h3 style={{ marginTop: "24px" }}>Notes for {selectedJobNumber}</h3>
+
+            {comments.length === 0 ? (
+              <p>No notes for this job yet.</p>
+            ) : (
+              <div style={{ display: "grid", gap: "12px" }}>
+                {comments.map((comment) => (
+                  <div key={comment.id} style={noteCardStyle}>
+                    <div>{comment.comment_body}</div>
+                    <div style={{ fontSize: "12px", color: "#555", marginTop: "8px" }}>
+                      {comment.visibility} — {new Date(comment.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section style={sectionStyle}>
+            <h2>Activity History</h2>
+
+            {activities.length === 0 ? (
+              <p>No activity has been recorded for this job yet.</p>
+            ) : (
+              <div style={{ display: "grid", gap: "12px" }}>
+                {activities.map((activity) => (
+                  <div key={activity.id} style={activityCardStyle}>
+                    <div style={{ fontWeight: 700 }}>{activity.action_label}</div>
+                    <div style={{ fontSize: "13px", color: "#555" }}>
+                      {activity.actor_email || "Unknown user"} — {new Date(activity.created_at).toLocaleString()}
+                    </div>
+                    <div style={{ fontSize: "12px", marginTop: "4px" }}>Type: {formatDisplayLabel(activity.action_type)}</div>
+                    {activity.details && Object.keys(activity.details).length > 0 && (
+                      <div style={activityDetailsStyle}>
+                        {Object.entries(activity.details).map(([key, value]) => (
+                          <div key={key} style={activityDetailRowStyle}>
+                            <strong>{formatDisplayLabel(key)}:</strong> <span>{formatActivityValue(value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section style={sectionStyle}>
+            <h2>Documents / Photos</h2>
+
+            {canEdit && (
+              <form onSubmit={uploadDocument}>
+                <label style={labelStyle}>
+                  Document Type
+                  <select value={documentType} onChange={(event) => setDocumentType(event.target.value)} style={inputStyle}>
+                    <option value="application">Application</option>
+                    <option value="estimate">Estimate</option>
+                    <option value="signed_estimate">Signed Estimate</option>
+                    <option value="site_photo">Site Photo</option>
+                    <option value="construction_photo">Construction Photo</option>
+                    <option value="easement_row">Easement / ROW</option>
+                    <option value="inspection">Inspection</option>
+                    <option value="payment_record">Payment Record</option>
+                    <option value="other">Other</option>
+                  </select>
+                </label>
+
+                <label style={labelStyle}>
+                  File or Photo
+                  <input
+                    type="file"
+                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                    capture="environment"
+                    onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
+                    style={inputStyle}
+                  />
+                </label>
+
+                <button type="submit" disabled={uploading || !selectedJobNumber} style={buttonStyle}>
+                  {uploading ? "Uploading..." : "Upload File / Photo"}
+                </button>
+              </form>
+            )}
+
+            {!canEdit && <p style={emptyStateStyle}>Viewer mode: documents are read-only.</p>}
+
+            <h3 style={{ marginTop: "24px" }}>Files for {selectedJobNumber}</h3>
+
+            {documents.length === 0 ? (
+              <p>No files uploaded for this job yet.</p>
+            ) : (
+              <div style={fileGridStyle}>
+                {documents.map((document) => {
+                  const fileUrl = signedFileUrls[document.storage_path];
+                  const isImage = isImageFile(document.file_name);
+
+                  return (
+                    <div key={document.id} style={fileCardStyle}>
+                      {!fileUrl ? (
+                        <div style={filePlaceholderStyle}>Preparing secure link...</div>
+                      ) : isImage ? (
+                        <a href={fileUrl} target="_blank" rel="noreferrer">
+                          <Image src={fileUrl} alt={document.file_name} width={180} height={140} unoptimized style={thumbnailStyle} />
+                        </a>
+                      ) : (
+                        <div style={filePlaceholderStyle}>File</div>
+                      )}
+
+                      {fileUrl ? (
+                        <a href={fileUrl} target="_blank" rel="noreferrer">
+                          {document.file_name}
+                        </a>
+                      ) : (
+                        <span>{document.file_name}</span>
+                      )}
+
+                      <div style={{ fontSize: "12px", marginTop: "4px" }}>{formatDisplayLabel(document.document_type)}</div>
+                      <div style={{ fontSize: "12px", color: "#555555" }}>{new Date(document.created_at).toLocaleString()}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </>
+      )}
     </main>
   );
 }
-
-
-function StaffGlobalStyles() {
-  return (
-    <style>{`
-      body,
-      button,
-      input,
-      select,
-      textarea,
-      h1,
-      h2,
-      h3,
-      h4,
-      p,
-      label,
-      div,
-      span,
-      table,
-      th,
-      td {
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif !important;
-      }
-
-      h1,
-      h2,
-      h3,
-      h4 {
-        font-weight: 850 !important;
-        letter-spacing: -0.35px;
-      }
-
-      button,
-      input,
-      select,
-      textarea {
-        font-size: 15px;
-      }
-
-        .staff-job-row-button {
-          border-radius: 8px !important;
-          overflow: hidden !important;
-          appearance: none !important;
-          -webkit-appearance: none !important;
-          clip-path: inset(0 round 8px) !important;
-        }
-
-        .staff-job-row-button,
-        .staff-job-row-button * {
-          border-top-left-radius: 8px !important;
-          border-top-right-radius: 8px !important;
-          border-bottom-left-radius: 8px !important;
-          border-bottom-right-radius: 8px !important;
-        }
-
-        .staff-dropdown-header-button {
-          border-radius: 10px !important;
-          overflow: hidden !important;
-          appearance: none !important;
-          -webkit-appearance: none !important;
-          clip-path: inset(0 round 10px) !important;
-        }
-
-    `}</style>
-  );
-}
-
-
-const staffAppFontFamily =
-  'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif';
-
-const staffPageShellStyle: React.CSSProperties = {
-  minHeight: "100vh",
-  padding: "32px",
-  background: "#f6f8f5",
-  color: "#071f14",
-  fontFamily: staffAppFontFamily,
-};
-
-const staffAuthShellStyle: React.CSSProperties = {
-  minHeight: "100vh",
-  display: "grid",
-  placeItems: "center",
-  padding: "32px",
-  background: "#f6f8f5",
-  color: "#071f14",
-  fontFamily: staffAppFontFamily,
-};
-
-const staffAuthCardStyle: React.CSSProperties = {
-  width: "min(520px, 100%)",
-  background: "#ffffff",
-  border: "1px solid #e1e7e2",
-  borderRadius: "10px",
-  padding: "28px",
-  boxShadow: "0 14px 34px rgba(0,0,0,0.07)",
-};
-
-const staffAuthBrandStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "18px",
-  marginBottom: "22px",
-};
-
-const staffAuthLogoStyle: React.CSSProperties = {
-  width: "96px",
-  height: "96px",
-  objectFit: "contain",
-  borderRadius: "999px",
-  background: "#ffffff",
-  padding: "8px",
-  border: "2px solid #e1e7e2",
-};
-
-const staffAuthFormStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "12px",
-};
-
-const staffLoadingCardStyle: React.CSSProperties = {
-  maxWidth: "520px",
-  padding: "30px",
-  background: "#ffffff",
-  borderRadius: "10px",
-  boxShadow: "0 14px 34px rgba(0,0,0,0.07)",
-};
-
-const staffLoadingTitleStyle: React.CSSProperties = {
-  fontFamily: staffAppFontFamily,
-  margin: 0,
-  fontSize: "32px",
-  fontWeight: 850,
-};
-
-const staffTopBarStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "18px",
-  padding: "22px 24px",
-  background: "#ffffff",
-  border: "1px solid #e1e7e2",
-  borderRadius: "10px",
-  boxShadow: "0 14px 34px rgba(0,0,0,0.07)",
-};
-
-const staffBrandHeaderStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "16px",
-  flexWrap: "wrap",
-};
-
-const staffLogoStyle: React.CSSProperties = {
-  width: "78px",
-  height: "78px",
-  objectFit: "contain",
-  borderRadius: "999px",
-  background: "#ffffff",
-  padding: "6px",
-  border: "2px solid #e1e7e2",
-  boxShadow: "0 8px 20px rgba(20, 53, 40, 0.14)",
-};
-
-const staffPageTitleStyle: React.CSSProperties = {
-  fontFamily: staffAppFontFamily,
-  margin: 0,
-  fontSize: "32px",
-  lineHeight: 1.05,
-  letterSpacing: "-0.8px",
-  fontWeight: 850,
-  color: "#071f14",
-};
-
-const staffPageSubtitleStyle: React.CSSProperties = {
-  margin: "4px 0 0",
-  color: "#4d5a53",
-  fontWeight: 600,
-};
-
-const staffUserLineStyle: React.CSSProperties = {
-  margin: "4px 0 0",
-  fontSize: "13px",
-  color: "#607168",
-};
-
-const staffTopActionsStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
-  flexWrap: "wrap",
-};
-
-const staffMessageStyle: React.CSSProperties = {
-  margin: "18px 0 0",
-  padding: "14px 16px",
-  border: "1px solid #e1e7e2",
-  background: "#ffffff",
-  color: "#111111",
-  borderRadius: "16px",
-};
-
-const staffSummaryGridStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-  gap: "16px",
-  marginTop: "22px",
-};
-
-const staffDesktopGridStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "420px minmax(520px, 1fr) 360px",
-  gap: "22px",
-  alignItems: "start",
-  marginTop: "22px",
-};
-
-const staffJobQueueCardStyle: React.CSSProperties = {
-  position: "sticky",
-  top: "20px",
-  maxHeight: "calc(100vh - 40px)",
-  overflow: "auto",
-  background: "#ffffff",
-  border: "1px solid #e1e7e2",
-  borderRadius: "10px",
-  padding: "22px",
-  boxShadow: "0 14px 34px rgba(0,0,0,0.07)",
-};
-
-const staffCenterColumnStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "18px",
-  minWidth: 0,
-};
-
-const staffSnapshotCardStyle: React.CSSProperties = {
-  position: "sticky",
-  top: "20px",
-  maxHeight: "calc(100vh - 40px)",
-  overflow: "auto",
-  background: "#ffffff",
-  border: "1px solid #e1e7e2",
-  borderRadius: "10px",
-  padding: "22px",
-  boxShadow: "0 14px 34px rgba(0,0,0,0.07)",
-};
-
-const staffPanelHeaderStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
-  gap: "14px",
-  marginBottom: "16px",
-};
-
-const staffSectionTitleStyle: React.CSSProperties = {
-  fontFamily: staffAppFontFamily,
-  margin: 0,
-  fontSize: "22px",
-  color: "#071f14",
-  fontWeight: 850,
-  letterSpacing: "-0.3px",
-};
-
-const staffSmallTitleStyle: React.CSSProperties = {
-  fontFamily: staffAppFontFamily,
-  margin: "0 0 12px",
-  fontSize: "17px",
-  color: "#071f14",
-  fontWeight: 850,
-};
-
-const staffMutedStyle: React.CSSProperties = {
-  margin: "4px 0 0",
-  color: "#5f6b64",
-  fontSize: "14px",
-};
-
-const staffPrimaryButtonStyle: React.CSSProperties = {
-  marginTop: "16px",
-  padding: "12px 18px",
-  cursor: "pointer",
-  background: "#21843b",
-  color: "#ffffff",
-  border: "1px solid #16682d",
-  borderRadius: "10px",
-  fontWeight: 850,
-  boxShadow: "0 10px 22px rgba(33,132,59,0.18)",
-};
-
-const staffSecondaryButtonStyle: React.CSSProperties = {
-  marginTop: 0,
-  padding: "11px 16px",
-  cursor: "pointer",
-  background: "#ffffff",
-  color: "#071f14",
-  border: "1px solid #d6e9da",
-  borderRadius: "10px",
-  fontWeight: 800,
-};
-
-const staffSmallButtonStyle: React.CSSProperties = {
-  marginTop: "10px",
-  padding: "8px 12px",
-  cursor: "pointer",
-  background: "#f4f7f5",
-  color: "#071f14",
-  border: "1px solid #d8e3dc",
-  borderRadius: "8px",
-  fontWeight: 800,
-};
-
-const staffFullButtonStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "11px 14px",
-  cursor: "pointer",
-  background: "#ffffff",
-  color: "#071f14",
-  border: "1px solid #d8e3dc",
-  borderRadius: "10px",
-  fontWeight: 800,
-  textAlign: "left",
-};
-
-const staffFullWidthCardStyle: React.CSSProperties = {
-  background: "#ffffff",
-  border: "1px solid #e1e7e2",
-  borderRadius: "10px",
-  padding: "22px",
-  boxShadow: "0 14px 34px rgba(0,0,0,0.07)",
-};
-
-const staffSelectedJobHeaderStyle: React.CSSProperties = {
-  ...staffFullWidthCardStyle,
-  display: "flex",
-  justifyContent: "space-between",
-  gap: "16px",
-  alignItems: "flex-start",
-};
-
-const staffEyebrowStyle: React.CSSProperties = {
-  margin: "0 0 6px",
-  color: "#21843b",
-  fontWeight: 850,
-  fontSize: "13px",
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-};
-
-const staffSelectedJobTitleStyle: React.CSSProperties = {
-  fontFamily: staffAppFontFamily,
-  margin: 0,
-  fontSize: "28px",
-  lineHeight: 1.08,
-  letterSpacing: "-0.6px",
-  color: "#071f14",
-  fontWeight: 850,
-};
-
-const staffStageBadgeStyle: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  borderRadius: "999px",
-  padding: "9px 14px",
-  background: "#e7f3ea",
-  border: "1px solid #d6e9da",
-  color: "#21843b",
-  fontWeight: 850,
-  whiteSpace: "nowrap",
-};
-
-const staffWorkflowCardStyle: React.CSSProperties = {
-  ...staffFullWidthCardStyle,
-  background: "#fbfdfb",
-};
-
-const staffNextActionCardStyle: React.CSSProperties = {
-  ...staffFullWidthCardStyle,
-  background: "linear-gradient(135deg, #ffffff, #ffffff)",
-  border: "1px solid #e1e7e2",
-};
-
-const staffFormGridStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-  gap: "16px",
-};
-
-const staffButtonRowStyle: React.CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "10px",
-  marginTop: "16px",
-};
-
-const staffStackStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "12px",
-};
-
-const staffJobListStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "10px",
-  marginTop: "18px",
-};
-
-const staffJobRowStyle: React.CSSProperties = {
-  width: "100%",
-  border: "1px solid #e1e7e2",
-  background: "#ffffff",
-  color: "#071f14",
-  borderRadius: "8px",
-  padding: "14px 16px",
-  cursor: "pointer",
-  textAlign: "left",
-  display: "grid",
-  gap: "6px",
-  transition: "background 180ms ease, border 180ms ease, box-shadow 180ms ease",
-  overflow: "hidden",
-  appearance: "none",
-  WebkitAppearance: "none",
-};
-
-const staffJobRowSelectedStyle: React.CSSProperties = {
-  background: "#f0f8f1",
-  border: "1px solid #b8dfc1",
-  borderRadius: "8px",
-  boxShadow: "inset 4px 0 0 #21843b",
-};
-
-const staffJobRowFlashStyle: React.CSSProperties = {
-  background: "#edf6ef",
-  border: "1px solid #b8dfc1",
-  borderRadius: "8px",
-};
-
-const staffJobRowTopStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "8px",
-};
-
-const staffJobApplicantStyle: React.CSSProperties = {
-  fontWeight: 850,
-  fontSize: "16px",
-};
-
-const staffJobMetaStyle: React.CSSProperties = {
-  color: "#5f6b64",
-  fontSize: "13px",
-};
-
-const staffJobNextActionStyle: React.CSSProperties = {
-  color: "#143528",
-  fontSize: "13px",
-  fontWeight: 700,
-};
-
-const staffSnapshotGridStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "14px",
-};
-
-const staffQuickActionsCardStyle: React.CSSProperties = {
-  marginTop: "20px",
-  padding: "16px",
-  borderRadius: "18px",
-  border: "1px solid #d8e3dc",
-  background: "#fbfdfb",
-  display: "grid",
-  gap: "10px",
-};
-
-const staffEmptySnapshotStyle: React.CSSProperties = {
-  padding: "12px",
-};
-
-const staffDropdownSectionStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "10px",
-};
-
-const staffDropdownHeaderButtonStyle: React.CSSProperties = {
-  width: "100%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "16px",
-  padding: "16px 18px",
-  border: "1px solid #e1e7e2",
-  borderRadius: "10px",
-  background: "#ffffff",
-  color: "#071f14",
-  cursor: "pointer",
-  textAlign: "left",
-  boxShadow: "0 10px 24px rgba(0,0,0,0.05)",
-};
-
-const staffDropdownTitleStyle: React.CSSProperties = {
-  fontFamily: staffAppFontFamily,
-  display: "block",
-  fontSize: "20px",
-  fontWeight: 850,
-  color: "#143528",
-};
-
-const staffDropdownSubtitleStyle: React.CSSProperties = {
-  display: "block",
-  marginTop: "4px",
-  fontSize: "13px",
-  color: "#607168",
-  fontWeight: 600,
-};
-
-const staffDropdownChevronStyle: React.CSSProperties = {
-  width: "32px",
-  height: "32px",
-  borderRadius: "8px",
-  display: "grid",
-  placeItems: "center",
-  background: "#edf6ef",
-  color: "#21843b",
-  fontSize: "20px",
-  fontWeight: 900,
-  flex: "0 0 auto",
-};
-
-const staffDropdownPanelStyle: React.CSSProperties = {
-  marginTop: "10px",
-  padding: "16px",
-  border: "1px solid #e1e7e2",
-  borderRadius: "10px",
-  background: "#ffffff",
-};
 
 function canShowConstructionControls(job: JobDetail | null) {
   if (!job) return false;
@@ -2394,14 +1766,6 @@ function parseMoney(value: string) {
   if (cleaned === "") return null;
   const numberValue = Number(cleaned);
   if (!Number.isFinite(numberValue) || numberValue < 0) return null;
-  return Math.round(numberValue * 100) / 100;
-}
-
-function parseSignedMoney(value: string) {
-  const cleaned = value.replace(/[$,]/g, "").trim();
-  if (cleaned === "") return null;
-  const numberValue = Number(cleaned);
-  if (!Number.isFinite(numberValue)) return null;
   return Math.round(numberValue * 100) / 100;
 }
 
@@ -2516,11 +1880,42 @@ function DetailWide({ label, value }: { label: string; value: React.ReactNode })
 function DashboardCard({ title, value }: { title: string; value: number | string }) {
   return (
     <div style={dashboardCardStyle}>
-      <h2>{title}</h2>
-      <p style={{ fontSize: "32px", margin: 0 }}>{value}</p>
+      <span style={dashboardTitleStyle}>{title}</span>
+      <span style={dashboardValueStyle}>{value}</span>
     </div>
   );
 }
+
+const dashboardCardStyle: React.CSSProperties = {
+  background: "#ffffff",
+  border: "1px solid #e1e7e2",
+  borderRadius: "10px",
+  padding: "16px 20px",
+  minHeight: "68px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "18px",
+  boxShadow: "0 10px 24px rgba(0,0,0,0.045)",
+};
+
+const dashboardTitleStyle: React.CSSProperties = {
+  fontFamily: typeof staffAppFontFamily !== "undefined" ? staffAppFontFamily : "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif",
+  color: "#071f14",
+  fontSize: "20px",
+  lineHeight: 1.1,
+  fontWeight: 850,
+  letterSpacing: "-0.3px",
+};
+
+const dashboardValueStyle: React.CSSProperties = {
+  fontFamily: typeof staffAppFontFamily !== "undefined" ? staffAppFontFamily : "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Arial, sans-serif",
+  color: "#4d5a53",
+  fontSize: "30px",
+  lineHeight: 1,
+  fontWeight: 500,
+  whiteSpace: "nowrap",
+};
 
 function FormInput({ label, value, required, onChange }: { label: string; value: string; required?: boolean; onChange: (value: string) => void }) {
   return (
@@ -2561,87 +1956,26 @@ function TableCell({ children }: { children: React.ReactNode }) {
 
 const mainStyle: React.CSSProperties = { padding: "40px", fontFamily: "Arial, sans-serif", background: "transparent", color: "#111111", minHeight: "100vh" };
 const brandHeaderStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" };
-const logoStyle: React.CSSProperties = { width: "84px", height: "84px", objectFit: "contain", borderRadius: "999px", background: "#ffffff", padding: "6px", border: "2px solid #e1e7e2", boxShadow: "0 8px 20px rgba(20, 53, 40, 0.18)" };
+const logoStyle: React.CSSProperties = { width: "84px", height: "84px", objectFit: "contain", borderRadius: "999px", background: "#fffaf0", padding: "6px", border: "2px solid #d8c8a3", boxShadow: "0 8px 20px rgba(20, 53, 40, 0.18)" };
 const topBarStyle: React.CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" };
-const messageStyle: React.CSSProperties = { padding: "12px", border: "1px solid #e1e7e2", background: "#ffffff", color: "#111111", borderRadius: "12px" };
-const dashboardGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginTop: "24px" };
-const dashboardCardStyle: React.CSSProperties = { border: "1px solid #e1e7e2", padding: "20px", background: "#ffffff", color: "#111111", borderRadius: "14px" };
-const sectionStyle: React.CSSProperties = { marginTop: "40px", maxWidth: "1000px", background: "#ffffff", color: "#111111" };
-const panelStyle: React.CSSProperties = { marginTop: "16px", padding: "16px", border: "1px solid #e1e7e2", background: "#ffffff", borderRadius: "14px" };
-const emptyStateStyle: React.CSSProperties = { padding: "16px", border: "1px dashed #999", background: "#ffffff", borderRadius: "12px" };
-const labelStyle: React.CSSProperties = { display: "block", marginTop: "12px", color: "#111111", fontWeight: 600 };
-const inputStyle: React.CSSProperties = {
-  display: "block",
-  width: "100%",
-  padding: "9px 10px",
-  marginTop: "5px",
-  background: "#ffffff",
-  color: "#071f14",
-  border: "1px solid #d8e0db",
-  borderRadius: "8px",
+const messageStyle: React.CSSProperties = { padding: "12px", border: "1px solid #d8c8a3", background: "#fffaf0", color: "#111111", borderRadius: "12px" };
+const dashboardGridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+  gap: "14px",
+  margin: "14px 0",
 };
 
 const buttonRowStyle: React.CSSProperties = { display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "16px" };
-const detailCardStyle: React.CSSProperties = { marginTop: "16px", padding: "16px", border: "1px solid #e1e7e2", background: "#ffffff", color: "#111111", borderRadius: "14px" };
+const detailCardStyle: React.CSSProperties = { marginTop: "16px", padding: "16px", border: "1px solid #d8c8a3", background: "#fffdf7", color: "#111111", borderRadius: "14px" };
 const detailGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" };
-const noteCardStyle: React.CSSProperties = { padding: "12px", border: "1px solid #e1e7e2", background: "#ffffff", borderRadius: "12px" };
-const activityCardStyle: React.CSSProperties = { padding: "12px", border: "1px solid #e1e7e2", background: "#ffffff", borderRadius: "12px" };
-const dropdownHeaderButtonStyle: React.CSSProperties = {
-  width: "100%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "16px",
-  padding: "18px 20px",
-  border: "1px solid #e1e7e2",
-  borderRadius: "16px",
-  background: "#ffffff",
-  color: "#111111",
-  cursor: "pointer",
-  textAlign: "left",
-  boxShadow: "0 10px 24px rgba(20, 53, 40, 0.08)",
-};
-
-const dropdownTitleStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: "22px",
-  fontWeight: 800,
-  color: "#143528",
-};
-
-const dropdownSubtitleStyle: React.CSSProperties = {
-  display: "block",
-  marginTop: "4px",
-  fontSize: "13px",
-  color: "#555555",
-  fontWeight: 600,
-};
-
-const dropdownChevronStyle: React.CSSProperties = {
-  width: "36px",
-  height: "36px",
-  borderRadius: "999px",
-  display: "grid",
-  placeItems: "center",
-  background: "#e3efe8",
-  color: "#143528",
-  fontSize: "22px",
-  fontWeight: 900,
-  flex: "0 0 auto",
-};
-
-const dropdownPanelStyle: React.CSSProperties = {
-  marginTop: "12px",
-  padding: "16px",
-  border: "1px solid #e1e7e2",
-  borderRadius: "16px",
-  background: "#ffffff",
-};
+const noteCardStyle: React.CSSProperties = { padding: "12px", border: "1px solid #d8c8a3", background: "#fffdf7", borderRadius: "12px" };
+const activityCardStyle: React.CSSProperties = { padding: "12px", border: "1px solid #d8c8a3", background: "#fffdf7", borderRadius: "12px" };
 const activityDetailsStyle: React.CSSProperties = { marginTop: "8px", padding: "10px", background: "#ffffff", border: "1px solid #ddd", fontSize: "13px", display: "grid", gap: "6px", borderRadius: "10px" };
 const activityDetailRowStyle: React.CSSProperties = { display: "flex", gap: "6px", flexWrap: "wrap" };
 const fileGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "16px", marginTop: "12px" };
-const fileCardStyle: React.CSSProperties = { border: "1px solid #e1e7e2", padding: "10px", background: "#ffffff", color: "#111111", borderRadius: "12px" };
+const fileCardStyle: React.CSSProperties = { border: "1px solid #d8c8a3", padding: "10px", background: "#fffdf7", color: "#111111", borderRadius: "12px" };
 const thumbnailStyle: React.CSSProperties = { width: "100%", height: "140px", objectFit: "cover", border: "1px solid #ccc", marginBottom: "8px", background: "#ffffff", borderRadius: "10px" };
 const filePlaceholderStyle: React.CSSProperties = { height: "140px", border: "1px solid #ccc", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", background: "#ffffff", textAlign: "center", padding: "8px", color: "#111111", borderRadius: "10px" };
-const gateBadgeStyle: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: "8px", padding: "4px 10px", borderRadius: "999px", background: "#ffffff", border: "1px solid #e1e7e2", whiteSpace: "normal" };
+const gateBadgeStyle: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: "8px", padding: "4px 10px", borderRadius: "999px", background: "#fffdf7", border: "1px solid #d8c8a3", whiteSpace: "normal" };
 const tableStyle: React.CSSProperties = { width: "100%", borderCollapse: "collapse", marginTop: "12px", background: "#ffffff", color: "#111111" };
