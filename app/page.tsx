@@ -1982,39 +1982,8 @@ const staffMessageStyle: React.CSSProperties = {
 const staffSummaryGridStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-  gap: "14px",
-  marginTop: "14px",
-};
-
-const dashboardCardStyle: React.CSSProperties = {
-  background: "#ffffff",
-  border: "1px solid #e1e7e2",
-  borderRadius: "10px",
-  padding: "16px 20px",
-  minHeight: "68px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "18px",
-  boxShadow: "0 10px 24px rgba(0,0,0,0.045)",
-};
-
-const dashboardTitleStyle: React.CSSProperties = {
-  fontFamily: staffAppFontFamily,
-  color: "#071f14",
-  fontSize: "20px",
-  lineHeight: 1.1,
-  fontWeight: 850,
-  letterSpacing: "-0.3px",
-};
-
-const dashboardValueStyle: React.CSSProperties = {
-  fontFamily: staffAppFontFamily,
-  color: "#4d5a53",
-  fontSize: "30px",
-  lineHeight: 1,
-  fontWeight: 500,
-  whiteSpace: "nowrap",
+  gap: "16px",
+  marginTop: "22px",
 };
 
 const staffDesktopGridStyle: React.CSSProperties = {
@@ -2547,8 +2516,8 @@ function DetailWide({ label, value }: { label: string; value: React.ReactNode })
 function DashboardCard({ title, value }: { title: string; value: number | string }) {
   return (
     <div style={dashboardCardStyle}>
-      <span style={dashboardTitleStyle}>{title}</span>
-      <span style={dashboardValueStyle}>{value}</span>
+      <h2>{title}</h2>
+      <p style={{ fontSize: "32px", margin: 0 }}>{value}</p>
     </div>
   );
 }
@@ -2596,6 +2565,21 @@ const logoStyle: React.CSSProperties = { width: "84px", height: "84px", objectFi
 const topBarStyle: React.CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" };
 const messageStyle: React.CSSProperties = { padding: "12px", border: "1px solid #e1e7e2", background: "#ffffff", color: "#111111", borderRadius: "12px" };
 const dashboardGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginTop: "24px" };
+const dashboardCardStyle: React.CSSProperties = { border: "1px solid #e1e7e2", padding: "20px", background: "#ffffff", color: "#111111", borderRadius: "14px" };
+const sectionStyle: React.CSSProperties = { marginTop: "40px", maxWidth: "1000px", background: "#ffffff", color: "#111111" };
+const panelStyle: React.CSSProperties = { marginTop: "16px", padding: "16px", border: "1px solid #e1e7e2", background: "#ffffff", borderRadius: "14px" };
+const emptyStateStyle: React.CSSProperties = { padding: "16px", border: "1px dashed #999", background: "#ffffff", borderRadius: "12px" };
+const labelStyle: React.CSSProperties = { display: "block", marginTop: "12px", color: "#111111", fontWeight: 600 };
+const inputStyle: React.CSSProperties = {
+  display: "block",
+  width: "100%",
+  padding: "9px 10px",
+  marginTop: "5px",
+  background: "#ffffff",
+  color: "#071f14",
+  border: "1px solid #d8e0db",
+  borderRadius: "8px",
+};
 
 const buttonRowStyle: React.CSSProperties = { display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "16px" };
 const detailCardStyle: React.CSSProperties = { marginTop: "16px", padding: "16px", border: "1px solid #e1e7e2", background: "#ffffff", color: "#111111", borderRadius: "14px" };
