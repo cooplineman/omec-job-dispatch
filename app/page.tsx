@@ -1265,6 +1265,7 @@ ${accessLink}`);
               visibleJobs.map((job) => (
                 <button
                   type="button"
+                  className="staff-job-row-button"
                   key={job.job_number}
                   onClick={() => selectJobFromList(job.job_number)}
                   style={{
@@ -1445,6 +1446,7 @@ ${accessLink}`);
               <section style={staffDropdownSectionStyle}>
                 <button
                   type="button"
+                  className="staff-dropdown-header-button"
                   onClick={() => setNotesOpen(!notesOpen)}
                   style={staffDropdownHeaderButtonStyle}
                   aria-expanded={notesOpen}
@@ -1503,6 +1505,7 @@ ${accessLink}`);
               <section style={staffDropdownSectionStyle}>
                 <button
                   type="button"
+                  className="staff-dropdown-header-button"
                   onClick={() => setActivityHistoryOpen(!activityHistoryOpen)}
                   style={staffDropdownHeaderButtonStyle}
                   aria-expanded={activityHistoryOpen}
@@ -1551,6 +1554,7 @@ ${accessLink}`);
               <section style={staffDropdownSectionStyle}>
                 <button
                   type="button"
+                  className="staff-dropdown-header-button"
                   onClick={() => setDocumentsOpen(!documentsOpen)}
                   style={staffDropdownHeaderButtonStyle}
                   aria-expanded={documentsOpen}
@@ -1647,6 +1651,7 @@ ${accessLink}`);
                 <section style={staffDropdownSectionStyle}>
                   <button
                     type="button"
+                    className="staff-dropdown-header-button"
                     onClick={() => setCorrectionToolsOpen(!correctionToolsOpen)}
                     style={staffDropdownHeaderButtonStyle}
                     aria-expanded={correctionToolsOpen}
@@ -1809,6 +1814,31 @@ function StaffGlobalStyles() {
       textarea {
         font-size: 15px;
       }
+
+        .staff-job-row-button {
+          border-radius: 8px !important;
+          overflow: hidden !important;
+          appearance: none !important;
+          -webkit-appearance: none !important;
+          clip-path: inset(0 round 8px) !important;
+        }
+
+        .staff-job-row-button,
+        .staff-job-row-button * {
+          border-top-left-radius: 8px !important;
+          border-top-right-radius: 8px !important;
+          border-bottom-left-radius: 8px !important;
+          border-bottom-right-radius: 8px !important;
+        }
+
+        .staff-dropdown-header-button {
+          border-radius: 10px !important;
+          overflow: hidden !important;
+          appearance: none !important;
+          -webkit-appearance: none !important;
+          clip-path: inset(0 round 10px) !important;
+        }
+
     `}</style>
   );
 }
@@ -2165,6 +2195,9 @@ const staffJobRowStyle: React.CSSProperties = {
   display: "grid",
   gap: "6px",
   transition: "background 180ms ease, border 180ms ease, box-shadow 180ms ease",
+  overflow: "hidden",
+  appearance: "none",
+  WebkitAppearance: "none",
 };
 
 const staffJobRowSelectedStyle: React.CSSProperties = {
