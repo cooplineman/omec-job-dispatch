@@ -1936,8 +1936,8 @@ const dashboardGridStyle: React.CSSProperties = {
 };
 const dashboardCardStyle: React.CSSProperties = {
   border: "1px solid #e1e7e2",
-  padding: "16px 20px",
-  minHeight: "68px",
+  padding: "14px 18px",
+  minHeight: "62px",
   background: "#ffffff",
   color: "#071f14",
   borderRadius: "10px",
