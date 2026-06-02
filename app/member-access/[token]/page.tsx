@@ -382,7 +382,7 @@ export default function MemberAccessPage({
             </p>
           </div>
           <a
-            href="https://oneidamadison.smarthub.coop/"
+            href="https://oneidamadison.smarthub.coop/ui/#/paynow/"
             target="_blank"
             rel="noreferrer"
             style={paymentButtonStyle}
