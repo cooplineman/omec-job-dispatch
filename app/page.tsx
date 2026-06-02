@@ -1064,20 +1064,29 @@ ${accessLink}`);
     setDeletingDocumentId(document.id);
     setMessage("");
 
-    const { error: rpcError } = await supabase.rpc("delete_job_document_by_number", {
+    const { data, error } = await supabase.rpc("delete_job_document_by_number", {
       p_job_number: selectedJobNumber,
       p_document_id: document.id,
+      p_storage_path: document.storage_path,
     });
 
-    if (rpcError) {
-      setMessage(`File delete failed: ${rpcError.message}`);
+    if (error) {
+      window.alert(`Delete failed: ${error.message}`);
+      setMessage(`Delete failed: ${error.message}`);
       setDeletingDocumentId("");
       return;
     }
 
-    await supabase.storage
-      .from("job-documents")
-      .remove([document.storage_path]);
+    const deletedCount = Array.isArray(data)
+      ? Number(data[0]?.deleted_count ?? 0)
+      : Number(data?.deleted_count ?? 0);
+
+    if (deletedCount < 1) {
+      window.alert("Delete did not remove the file. Supabase did not find that document record.");
+      setMessage("Delete did not remove the file. Supabase did not find that document record.");
+      setDeletingDocumentId("");
+      return;
+    }
 
     setDocuments((currentDocuments) =>
       currentDocuments.filter((currentDocument) => currentDocument.id !== document.id)
