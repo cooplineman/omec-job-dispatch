@@ -61,6 +61,7 @@ export default function MemberAccessPage({
   const [uploading, setUploading] = useState(false);
   const [memberDocumentType, setMemberDocumentType] = useState("site_photo");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   const selectedJob = useMemo(
     () => jobs.find((job) => job.job_number === selectedJobNumber) || jobs[0],
@@ -79,6 +80,19 @@ export default function MemberAccessPage({
         : [],
     [documents, selectedJob]
   );
+
+  useEffect(() => {
+    function updateViewportMode() {
+      setIsMobile(window.innerWidth <= 760);
+    }
+
+    updateViewportMode();
+    window.addEventListener("resize", updateViewportMode);
+
+    return () => {
+      window.removeEventListener("resize", updateViewportMode);
+    };
+  }, []);
 
   useEffect(() => {
     async function loadAccess() {
@@ -200,7 +214,8 @@ export default function MemberAccessPage({
 
   if (loading) {
     return (
-      <main style={shellStyle}>
+      <main style={getShellStyle(isMobile)}>
+        <MemberMobileStyles />
         <div style={loadingCardStyle}>Loading your service request...</div>
       </main>
     );
@@ -208,13 +223,14 @@ export default function MemberAccessPage({
 
   if (message && jobs.length === 0) {
     return (
-      <main style={shellStyle}>
-        <aside style={sidebarStyle}>
+      <main style={getShellStyle(isMobile)}>
+        <MemberMobileStyles />
+        <aside style={getSidebarStyle(isMobile)}>
           <BrandBlock />
         </aside>
-        <section style={contentStyle}>
+        <section style={getContentStyle(isMobile)}>
           <div style={cardStyle}>
-            <h1 style={titleStyle}>Access Link Unavailable</h1>
+            <h1 style={getTitleStyle(isMobile)}>Access Link Unavailable</h1>
             <p style={mutedStyle}>
               This service request link is expired, invalid, or no longer active.
               Please contact OMEC if you need a new link.
@@ -228,13 +244,14 @@ export default function MemberAccessPage({
 
   if (!selectedJob) {
     return (
-      <main style={shellStyle}>
-        <aside style={sidebarStyle}>
+      <main style={getShellStyle(isMobile)}>
+        <MemberMobileStyles />
+        <aside style={getSidebarStyle(isMobile)}>
           <BrandBlock />
         </aside>
-        <section style={contentStyle}>
+        <section style={getContentStyle(isMobile)}>
           <div style={cardStyle}>
-            <h1 style={titleStyle}>No Service Request Found</h1>
+            <h1 style={getTitleStyle(isMobile)}>No Service Request Found</h1>
             <p style={mutedStyle}>
               No service request is currently available for this access link.
             </p>
@@ -245,8 +262,9 @@ export default function MemberAccessPage({
   }
 
   return (
-    <main style={shellStyle}>
-      <aside style={sidebarStyle}>
+    <main style={getShellStyle(isMobile)}>
+      <MemberMobileStyles />
+      <aside style={getSidebarStyle(isMobile)}>
         <BrandBlock />
 
         <nav style={navStyle}>
@@ -271,11 +289,11 @@ export default function MemberAccessPage({
 
       </aside>
 
-      <section style={contentStyle}>
-        <header id="overview" style={heroStyle}>
+      <section style={getContentStyle(isMobile)}>
+        <header id="overview" style={getHeroStyle(isMobile)}>
           <div>
             <p style={welcomeStyle}>Welcome,</p>
-            <h1 style={titleStyle}>{getFirstName(selectedJob.applicant_name)}&apos;s Service Request</h1>
+            <h1 style={getTitleStyle(isMobile)}>{getFirstName(selectedJob.applicant_name)}&apos;s Service Request</h1>
             <p style={subtitleStyle}>Here is the latest update on your project.</p>
           </div>
         </header>
@@ -299,7 +317,7 @@ export default function MemberAccessPage({
           </div>
         )}
 
-        <section style={infoStripStyle}>
+        <section style={getInfoStripStyle(isMobile)}>
           <InfoTile icon={<FileDigitIcon />} label="Job Number" value={selectedJob.job_number} />
           <InfoTile
             icon={<MapPinHouseIcon />}
@@ -316,7 +334,7 @@ export default function MemberAccessPage({
             <span style={updatedBadgeStyle}>Updated {formatShortDate(selectedJob.updated_at)}</span>
           </div>
 
-          <div style={statusTrackStyle}>
+          <div style={getStatusTrackStyle(isMobile)}>
             {timeline.map((step, index) => (
               <div key={step.label} style={trackStepStyle}>
                 {index < timeline.length - 1 && <div style={trackLineStyle} />}
@@ -336,7 +354,7 @@ export default function MemberAccessPage({
           </div>
         </section>
 
-        <section style={twoColumnStyle}>
+        <section style={getTwoColumnStyle(isMobile)}>
           <div style={metricCardStyle}>
             <div style={metricIconStyle}>
               <ReceiptIcon />
@@ -371,7 +389,7 @@ export default function MemberAccessPage({
           </div>
         </section>
 
-        <section id="payments" style={paymentCardStyle}>
+        <section id="payments" style={getPaymentCardStyle(isMobile)}>
           <div style={paymentIconStyle}>
             <CircleDollarSignIcon />
           </div>
@@ -382,7 +400,7 @@ export default function MemberAccessPage({
             </p>
           </div>
           <a
-            href="https://oneidamadison.smarthub.coop/ui/#/paynow/"
+            href="https://oneidamadison.smarthub.coop/"
             target="_blank"
             rel="noreferrer"
             style={paymentButtonStyle}
@@ -450,7 +468,7 @@ export default function MemberAccessPage({
             Share site/construction photos or inspection documents with OMEC.
           </p>
 
-          <form onSubmit={uploadMemberDocument} style={uploadFormStyle}>
+          <form onSubmit={uploadMemberDocument} style={getUploadFormStyle(isMobile)}>
             <div style={uploadFieldsStyle}>
               <label style={uploadFieldStyle}>
                 <span style={uploadFieldIconStyle}>
@@ -499,7 +517,7 @@ export default function MemberAccessPage({
           {message && <p style={alertStyle}>{message}</p>}
         </section>
 
-        <section id="help" style={supportCardStyle}>
+        <section id="help" style={getSupportCardStyle(isMobile)}>
           <div style={supportIconStyle}>
             <HelpCircleIcon />
           </div>
@@ -1067,6 +1085,151 @@ function getTrackCircleStyle(status: TimelineStep["status"]): React.CSSPropertie
   }
 
   return { ...base, background: "#f2f3f2", color: "#58635b", border: "1px solid #d8ddda" };
+}
+
+
+function MemberMobileStyles() {
+  return (
+    <style>{`
+      @media (max-width: 760px) {
+        html,
+        body {
+          overflow-x: hidden;
+        }
+
+        body {
+          background: #f6f8f5;
+        }
+
+        a,
+        button,
+        input,
+        select,
+        textarea {
+          -webkit-tap-highlight-color: transparent;
+        }
+      }
+    `}</style>
+  );
+}
+
+function getShellStyle(isMobile: boolean): React.CSSProperties {
+  return isMobile
+    ? {
+        ...shellStyle,
+        display: "block",
+        gridTemplateColumns: "none",
+      }
+    : shellStyle;
+}
+
+function getSidebarStyle(isMobile: boolean): React.CSSProperties {
+  return isMobile
+    ? {
+        ...sidebarStyle,
+        position: "relative",
+        height: "auto",
+        minHeight: 0,
+        overflow: "visible",
+        padding: "18px 18px 16px",
+      }
+    : sidebarStyle;
+}
+
+function getContentStyle(isMobile: boolean): React.CSSProperties {
+  return isMobile
+    ? {
+        ...contentStyle,
+        padding: "18px",
+        maxWidth: "100%",
+        boxSizing: "border-box",
+      }
+    : contentStyle;
+}
+
+function getHeroStyle(isMobile: boolean): React.CSSProperties {
+  return isMobile
+    ? {
+        ...heroStyle,
+        minHeight: "auto",
+        marginBottom: "16px",
+        alignItems: "flex-start",
+      }
+    : heroStyle;
+}
+
+function getTitleStyle(isMobile: boolean): React.CSSProperties {
+  return isMobile
+    ? {
+        ...titleStyle,
+        fontSize: "34px",
+        lineHeight: 1.06,
+        letterSpacing: "-0.8px",
+      }
+    : titleStyle;
+}
+
+function getInfoStripStyle(isMobile: boolean): React.CSSProperties {
+  return isMobile
+    ? {
+        ...infoStripStyle,
+        gridTemplateColumns: "1fr",
+        padding: "18px",
+      }
+    : infoStripStyle;
+}
+
+function getStatusTrackStyle(isMobile: boolean): React.CSSProperties {
+  return isMobile
+    ? {
+        ...statusTrackStyle,
+        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+        gap: "14px",
+      }
+    : statusTrackStyle;
+}
+
+function getTwoColumnStyle(isMobile: boolean): React.CSSProperties {
+  return isMobile
+    ? {
+        ...twoColumnStyle,
+        gridTemplateColumns: "1fr",
+        gap: "14px",
+      }
+    : twoColumnStyle;
+}
+
+function getPaymentCardStyle(isMobile: boolean): React.CSSProperties {
+  return isMobile
+    ? {
+        ...paymentCardStyle,
+        gridTemplateColumns: "1fr",
+        textAlign: "left",
+        alignItems: "stretch",
+        padding: "20px",
+      }
+    : paymentCardStyle;
+}
+
+function getUploadFormStyle(isMobile: boolean): React.CSSProperties {
+  return isMobile
+    ? {
+        ...uploadFormStyle,
+        gridTemplateColumns: "1fr",
+        gap: "16px",
+      }
+    : uploadFormStyle;
+}
+
+function getSupportCardStyle(isMobile: boolean): React.CSSProperties {
+  return isMobile
+    ? {
+        ...supportCardStyle,
+        gridTemplateColumns: "1fr",
+        alignItems: "stretch",
+        textAlign: "left",
+      }
+    : supportCardStyle;
 }
 
 const appFontFamily =
