@@ -254,6 +254,10 @@ export default function MemberAccessPage({
             <HomeIcon />
             Overview
           </a>
+          <a href="#payments" style={navItemStyle}>
+            <CircleDollarSignIcon />
+            Payments
+          </a>
           <a href="#documents" style={navItemStyle}>
             <FolderIcon />
             Documents
@@ -365,6 +369,26 @@ export default function MemberAccessPage({
               <div style={mutedStyle}>{getFinalPaymentRefundMessage(selectedJob)}</div>
             </div>
           </div>
+        </section>
+
+        <section id="payments" style={paymentCardStyle}>
+          <div style={paymentIconStyle}>
+            <CircleDollarSignIcon />
+          </div>
+          <div style={paymentContentStyle}>
+            <h2 style={{ ...sectionTitleStyle, margin: 0 }}>Make a Payment</h2>
+            <p style={{ ...mutedStyle, margin: "8px 0 0" }}>
+              Use SmartHub to pay your site visit fee, deposit, or final payment.
+            </p>
+          </div>
+          <a
+            href="https://oneidamadison.smarthub.coop/"
+            target="_blank"
+            rel="noreferrer"
+            style={paymentButtonStyle}
+          >
+            Pay with SmartHub
+          </a>
         </section>
 
         <section id="documents" style={cardStyle}>
@@ -1497,6 +1521,41 @@ const primaryButtonStyle: React.CSSProperties = {
   fontSize: "16px",
   cursor: "pointer",
   boxShadow: "0 12px 24px rgba(0, 79, 38, 0.18)",
+};
+
+const paymentCardStyle: React.CSSProperties = {
+  ...cardStyle,
+  background: "linear-gradient(135deg, #f1f9f2, #ffffff)",
+  display: "grid",
+  gridTemplateColumns: "56px minmax(0, 1fr) auto",
+  alignItems: "center",
+  gap: "18px",
+  padding: "24px",
+};
+
+const paymentIconStyle: React.CSSProperties = {
+  width: "56px",
+  height: "56px",
+  borderRadius: "18px",
+  background: "#e7f3ea",
+  color: "#21843b",
+  display: "grid",
+  placeItems: "center",
+};
+
+const paymentContentStyle: React.CSSProperties = {
+  minWidth: 0,
+};
+
+const paymentButtonStyle: React.CSSProperties = {
+  padding: "14px 22px",
+  borderRadius: "14px",
+  background: "#21843b",
+  color: "#ffffff",
+  textDecoration: "none",
+  fontWeight: 850,
+  whiteSpace: "nowrap",
+  boxShadow: "0 10px 22px rgba(33, 132, 59, 0.18)",
 };
 
 const supportCardStyle: React.CSSProperties = {
