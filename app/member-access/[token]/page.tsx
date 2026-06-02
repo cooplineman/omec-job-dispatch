@@ -334,18 +334,41 @@ export default function MemberAccessPage({
             <span style={updatedBadgeStyle}>Updated {formatShortDate(selectedJob.updated_at)}</span>
           </div>
 
-          <div style={getStatusTrackStyle(isMobile)}>
-            {timeline.map((step, index) => (
-              <div key={step.label} style={trackStepStyle}>
-                {index < timeline.length - 1 && <div style={trackLineStyle} />}
-                <div style={getTrackCircleStyle(step.status)}>
-                  {getTrackSymbol(step.status, step.label)}
+          {isMobile ? (
+            <div style={mobileStatusListStyle}>
+              {timeline.map((step) => (
+                <div key={step.label} style={mobileStatusStepStyle}>
+                  <div style={getMobileStatusDotStyle(step.status)}>
+                    {step.status === "complete" || step.status === "not_required" ? "✓" : ""}
+                  </div>
+                  <div style={mobileStatusTextStyle}>
+                    <div style={mobileStatusLabelRowStyle}>
+                      <span style={mobileStatusLabelStyle}>{step.label}</span>
+                      <span style={getMobileStatusBadgeStyle(step.status)}>
+                        {getStatusWord(step.status)}
+                      </span>
+                    </div>
+                    <div style={mobileStatusDetailStyle}>
+                      {step.detail || getStatusWord(step.status)}
+                    </div>
+                  </div>
                 </div>
-                <div style={trackLabelStyle}>{step.label}</div>
-                <div style={trackDetailStyle}>{step.detail || getStatusWord(step.status)}</div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div style={getStatusTrackStyle(isMobile)}>
+              {timeline.map((step, index) => (
+                <div key={step.label} style={trackStepStyle}>
+                  {index < timeline.length - 1 && <div style={trackLineStyle} />}
+                  <div style={getTrackCircleStyle(step.status)}>
+                    {getTrackSymbol(step.status, step.label)}
+                  </div>
+                  <div style={trackLabelStyle}>{step.label}</div>
+                  <div style={trackDetailStyle}>{step.detail || getStatusWord(step.status)}</div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div style={statusMessageStyle}>
             <strong>{formatPublicStatus(selectedJob.public_status)}</strong>
@@ -1087,6 +1110,58 @@ function getTrackCircleStyle(status: TimelineStep["status"]): React.CSSPropertie
   return { ...base, background: "#f2f3f2", color: "#58635b", border: "1px solid #d8ddda" };
 }
 
+function getMobileStatusDotStyle(status: TimelineStep["status"]): React.CSSProperties {
+  const base: React.CSSProperties = {
+    width: "28px",
+    height: "28px",
+    borderRadius: "999px",
+    display: "grid",
+    placeItems: "center",
+    fontSize: "15px",
+    fontWeight: 900,
+    flex: "0 0 auto",
+    marginTop: "2px",
+  };
+
+  if (status === "complete") {
+    return { ...base, background: "#21843b", color: "#ffffff" };
+  }
+
+  if (status === "current") {
+    return { ...base, background: "#ffffff", color: "#21843b", border: "3px solid #21843b" };
+  }
+
+  if (status === "not_required") {
+    return { ...base, background: "#eef4ef", color: "#52715d", border: "1px solid #d7e2da" };
+  }
+
+  return { ...base, background: "#f2f3f2", color: "#58635b", border: "1px solid #d8ddda" };
+}
+
+function getMobileStatusBadgeStyle(status: TimelineStep["status"]): React.CSSProperties {
+  const base: React.CSSProperties = {
+    borderRadius: "999px",
+    padding: "5px 9px",
+    fontSize: "11px",
+    fontWeight: 850,
+    whiteSpace: "nowrap",
+  };
+
+  if (status === "complete") {
+    return { ...base, background: "#edf6ef", color: "#21843b" };
+  }
+
+  if (status === "current") {
+    return { ...base, background: "#21843b", color: "#ffffff" };
+  }
+
+  if (status === "not_required") {
+    return { ...base, background: "#eef4ef", color: "#52715d" };
+  }
+
+  return { ...base, background: "#f2f3f2", color: "#58635b" };
+}
+
 
 function MemberMobileStyles() {
   return (
@@ -1425,6 +1500,46 @@ const updatedBadgeStyle: React.CSSProperties = {
   padding: "7px 10px",
   color: "#3d5145",
   background: "#fbfdfb",
+};
+
+const mobileStatusListStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "10px",
+  marginBottom: "18px",
+};
+
+const mobileStatusStepStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "12px",
+  alignItems: "flex-start",
+  padding: "13px 14px",
+  border: "1px solid #e1e7e2",
+  borderRadius: "14px",
+  background: "#ffffff",
+};
+
+const mobileStatusTextStyle: React.CSSProperties = {
+  minWidth: 0,
+  width: "100%",
+};
+
+const mobileStatusLabelRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+};
+
+const mobileStatusLabelStyle: React.CSSProperties = {
+  fontWeight: 850,
+  color: "#071f14",
+  fontSize: "14px",
+};
+
+const mobileStatusDetailStyle: React.CSSProperties = {
+  color: "#64716a",
+  fontSize: "12px",
+  marginTop: "4px",
 };
 
 const statusTrackStyle: React.CSSProperties = {
