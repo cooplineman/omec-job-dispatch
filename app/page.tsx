@@ -1064,28 +1064,24 @@ ${accessLink}`);
     setDeletingDocumentId(document.id);
     setMessage("");
 
-    const { error: recordError } = await supabase
-      .from("job_documents")
-      .delete()
-      .eq("id", document.id);
+    const { error: rpcError } = await supabase.rpc("delete_job_document_by_number", {
+      p_job_number: selectedJobNumber,
+      p_document_id: document.id,
+    });
 
-    if (recordError) {
-      setMessage(`File delete failed: ${recordError.message}`);
+    if (rpcError) {
+      setMessage(`File delete failed: ${rpcError.message}`);
       setDeletingDocumentId("");
       return;
     }
 
-    const { error: storageError } = await supabase.storage
+    await supabase.storage
       .from("job-documents")
       .remove([document.storage_path]);
 
-    if (storageError) {
-      setMessage(
-        `Removed the file record, but storage cleanup failed: ${storageError.message}`
-      );
-    } else {
-      setMessage(`Deleted ${document.file_name}`);
-    }
+    setDocuments((currentDocuments) =>
+      currentDocuments.filter((currentDocument) => currentDocument.id !== document.id)
+    );
 
     setSignedFileUrls((currentUrls) => {
       const nextUrls = { ...currentUrls };
@@ -1093,6 +1089,7 @@ ${accessLink}`);
       return nextUrls;
     });
 
+    setMessage(`Deleted ${document.file_name}`);
     await loadSelectedJobData(selectedJobNumber);
     setDeletingDocumentId("");
   }
