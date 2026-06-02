@@ -141,6 +141,7 @@ export default function Home() {
   const [creating, setCreating] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deletingDocumentId, setDeletingDocumentId] = useState("");
   const [addingComment, setAddingComment] = useState(false);
   const [showEditInfoForm, setShowEditInfoForm] = useState(false);
   const [activityHistoryOpen, setActivityHistoryOpen] = useState(false);
@@ -1040,6 +1041,62 @@ ${accessLink}`);
     setUploading(false);
   }
 
+
+  async function deleteDocument(document: JobDocument) {
+    if (!canEdit) {
+      setMessage("You do not have permission to delete files.");
+      return;
+    }
+
+    if (!selectedJobNumber) {
+      setMessage("Select a job first.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete "${document.file_name}" from this job? This cannot be undone.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingDocumentId(document.id);
+    setMessage("");
+
+    const { error: recordError } = await supabase
+      .from("job_documents")
+      .delete()
+      .eq("id", document.id);
+
+    if (recordError) {
+      setMessage(`File delete failed: ${recordError.message}`);
+      setDeletingDocumentId("");
+      return;
+    }
+
+    const { error: storageError } = await supabase.storage
+      .from("job-documents")
+      .remove([document.storage_path]);
+
+    if (storageError) {
+      setMessage(
+        `Removed the file record, but storage cleanup failed: ${storageError.message}`
+      );
+    } else {
+      setMessage(`Deleted ${document.file_name}`);
+    }
+
+    setSignedFileUrls((currentUrls) => {
+      const nextUrls = { ...currentUrls };
+      delete nextUrls[document.storage_path];
+      return nextUrls;
+    });
+
+    await loadSelectedJobData(selectedJobNumber);
+    setDeletingDocumentId("");
+  }
+
   async function addComment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -1638,6 +1695,17 @@ ${accessLink}`);
 
                               <div style={{ fontSize: "12px", marginTop: "4px" }}>{formatDisplayLabel(document.document_type)}</div>
                               <div style={{ fontSize: "12px", color: "#555555" }}>{new Date(document.created_at).toLocaleString()}</div>
+
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => deleteDocument(document)}
+                                  disabled={deletingDocumentId === document.id}
+                                  style={deleteDocumentButtonStyle}
+                                >
+                                  {deletingDocumentId === document.id ? "Deleting..." : "Delete File"}
+                                </button>
+                              )}
                             </div>
                           );
                         })}
@@ -1982,8 +2050,8 @@ const staffMessageStyle: React.CSSProperties = {
 const staffSummaryGridStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-  gap: "14px",
-  marginTop: "14px",
+  gap: "16px",
+  marginTop: "22px",
 };
 
 const staffDesktopGridStyle: React.CSSProperties = {
@@ -2516,8 +2584,8 @@ function DetailWide({ label, value }: { label: string; value: React.ReactNode })
 function DashboardCard({ title, value }: { title: string; value: number | string }) {
   return (
     <div style={dashboardCardStyle}>
-      <span style={dashboardTitleStyle}>{title}</span>
-      <span style={dashboardValueStyle}>{value}</span>
+      <h2>{title}</h2>
+      <p style={{ fontSize: "32px", margin: 0 }}>{value}</p>
     </div>
   );
 }
@@ -2565,37 +2633,7 @@ const logoStyle: React.CSSProperties = { width: "84px", height: "84px", objectFi
 const topBarStyle: React.CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" };
 const messageStyle: React.CSSProperties = { padding: "12px", border: "1px solid #e1e7e2", background: "#ffffff", color: "#111111", borderRadius: "12px" };
 const dashboardGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginTop: "24px" };
-const dashboardCardStyle: React.CSSProperties = {
-  border: "1px solid #e1e7e2",
-  padding: "14px 18px",
-  minHeight: "62px",
-  background: "#ffffff",
-  color: "#071f14",
-  borderRadius: "10px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "18px",
-  boxShadow: "0 10px 24px rgba(0,0,0,0.045)",
-};
-
-const dashboardTitleStyle: React.CSSProperties = {
-  fontFamily: staffAppFontFamily,
-  color: "#071f14",
-  fontSize: "18px",
-  lineHeight: 1.1,
-  fontWeight: 850,
-  letterSpacing: "-0.2px",
-};
-
-const dashboardValueStyle: React.CSSProperties = {
-  fontFamily: staffAppFontFamily,
-  color: "#4d5a53",
-  fontSize: "28px",
-  lineHeight: 1,
-  fontWeight: 600,
-  whiteSpace: "nowrap",
-};
+const dashboardCardStyle: React.CSSProperties = { border: "1px solid #e1e7e2", padding: "20px", background: "#ffffff", color: "#111111", borderRadius: "14px" };
 const sectionStyle: React.CSSProperties = { marginTop: "40px", maxWidth: "1000px", background: "#ffffff", color: "#111111" };
 const panelStyle: React.CSSProperties = { marginTop: "16px", padding: "16px", border: "1px solid #e1e7e2", background: "#ffffff", borderRadius: "14px" };
 const emptyStateStyle: React.CSSProperties = { padding: "16px", border: "1px dashed #999", background: "#ffffff", borderRadius: "12px" };
@@ -2670,6 +2708,18 @@ const dropdownPanelStyle: React.CSSProperties = {
 const activityDetailsStyle: React.CSSProperties = { marginTop: "8px", padding: "10px", background: "#ffffff", border: "1px solid #ddd", fontSize: "13px", display: "grid", gap: "6px", borderRadius: "10px" };
 const activityDetailRowStyle: React.CSSProperties = { display: "flex", gap: "6px", flexWrap: "wrap" };
 const fileGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "16px", marginTop: "12px" };
+const deleteDocumentButtonStyle: React.CSSProperties = {
+  width: "100%",
+  marginTop: "10px",
+  padding: "8px 10px",
+  border: "1px solid #f0b8b8",
+  borderRadius: "8px",
+  background: "#fff5f5",
+  color: "#a92323",
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
 const fileCardStyle: React.CSSProperties = { border: "1px solid #e1e7e2", padding: "10px", background: "#ffffff", color: "#111111", borderRadius: "12px" };
 const thumbnailStyle: React.CSSProperties = { width: "100%", height: "140px", objectFit: "cover", border: "1px solid #ccc", marginBottom: "8px", background: "#ffffff", borderRadius: "10px" };
 const filePlaceholderStyle: React.CSSProperties = { height: "140px", border: "1px solid #ccc", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", background: "#ffffff", textAlign: "center", padding: "8px", color: "#111111", borderRadius: "10px" };
